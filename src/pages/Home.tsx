@@ -113,7 +113,7 @@ export default function Home() {
           label="최장 연휴 찾기"
           onClick={submit}
           disabled={leave == null || loading}
-          hint={loading ? HINT_LOADING : empty ? HINT_EMPTY : undefined}
+          hint={loading ? HINT_LOADING : undefined}
         />
       }
     >
@@ -139,7 +139,7 @@ export default function Home() {
           value={value}
           disabled={loading}
           hasError={touched && invalid}
-          help={touched && invalid ? HELP_INVALID : undefined}
+          help={touched && invalid ? HELP_INVALID : empty ? HINT_EMPTY : undefined}
           onChange={(e) => {
             setTouched(true);
             setValue(e.target.value);

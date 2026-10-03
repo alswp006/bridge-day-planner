@@ -153,10 +153,11 @@ export default function Result() {
     return (
       <ScreenScaffold top={top}>
         <EmptyState
+          centered
           title="아직 계산한 연휴가 없어요"
           description="남은 연차를 입력하면 연휴를 찾아 드려요"
           action={
-            <Button variant="weak" aria-label="연차 입력하러 가기" onClick={goHomeWithHaptic}>
+            <Button variant="weak" display="block" aria-label="연차 입력하러 가기" onClick={goHomeWithHaptic}>
               연차 입력하러 가기
             </Button>
           }
@@ -172,10 +173,11 @@ export default function Result() {
     return (
       <ScreenScaffold top={top}>
         <EmptyState
+          centered
           title="계산할 수 있는 연휴가 없어요"
           description="연차 일수를 바꿔서 다시 찾아볼 수 있어요"
           action={
-            <Button variant="weak" aria-label="다시 입력하기" onClick={goHomeWithHaptic}>
+            <Button variant="weak" display="block" aria-label="다시 입력하기" onClick={goHomeWithHaptic}>
               다시 입력하기
             </Button>
           }

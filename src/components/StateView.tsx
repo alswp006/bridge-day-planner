@@ -14,7 +14,10 @@ export function EmptyState({
   description,
   action,
   testId,
+  centered,
 }: {
+  /** 화면 전체가 빈 상태일 때 세로 중앙에 둔다 */
+  centered?: boolean;
   /** Asset.ContentIcon 등(선택) */
   icon?: ReactNode;
   title: ReactNode;
@@ -32,6 +35,7 @@ export function EmptyState({
         alignItems: "center",
         textAlign: "center",
         padding: "48px 24px",
+        ...(centered ? { justifyContent: "center", minHeight: "60dvh" } : null),
       }}
     >
       {icon}
@@ -45,8 +49,8 @@ export function EmptyState({
       ) : null}
       {action ? (
         <>
-          <Spacing size={20} />
-          {action}
+          <Spacing size={24} />
+          <div style={{ width: "100%" }}>{action}</div>
         </>
       ) : null}
     </div>
