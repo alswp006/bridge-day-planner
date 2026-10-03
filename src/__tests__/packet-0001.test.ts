@@ -34,28 +34,16 @@ describe("Types & Constants + 공휴일 데이터 (Packet 0001)", () => {
 
   it("AC-2: Every holiday has required fields (date, name, isSubstitute)", () => {
     HOLIDAYS.forEach((holiday, idx) => {
-      expect(holiday).toHaveProperty(
-        "date",
-        `Holiday at index ${idx} missing date field`
-      );
-      expect(holiday).toHaveProperty(
-        "name",
-        `Holiday at index ${idx} missing name field`
-      );
-      expect(holiday).toHaveProperty(
-        "isSubstitute",
-        `Holiday at index ${idx} missing isSubstitute field`
-      );
+      expect(holiday, `Holiday at index ${idx}`).toHaveProperty("date");
+      expect(holiday, `Holiday at index ${idx}`).toHaveProperty("name");
+      expect(holiday, `Holiday at index ${idx}`).toHaveProperty("isSubstitute");
     });
   });
 
   it("AC-2: All dates are in YYYY-MM-DD format", () => {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     HOLIDAYS.forEach((holiday) => {
-      expect(holiday.date).toMatch(
-        dateRegex,
-        `Invalid date format: ${holiday.date}`
-      );
+      expect(holiday.date).toMatch(dateRegex);
       const [year, month, day] = holiday.date.split("-").map(Number);
       expect(year).toBeGreaterThanOrEqual(2026);
       expect(year).toBeLessThanOrEqual(2027);

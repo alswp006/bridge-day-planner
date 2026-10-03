@@ -1,0 +1,35 @@
+{
+  "koreanName": "징검다리 연휴",
+  "englishName": "Bridge Day Planner",
+  "appName": "bridge-day-planner",
+  "ageRating": "전체",
+  "appType": "비게임",
+  "supportEmail": "support@aifactory.dev",
+  "category": {
+    "primary": "생활"
+  },
+  "subtitle": "연차로 최길 연휴 자동 계획",
+  "description": "남은 연차 일수를 입력하기만 하면, 공휴일과 대체공휴일까지 반영해 가장 길게 이어서 쉴 수 있는 연휴 조합을 1초 안에 찾아줍니다. 1순위 조합의 기간과 연차 사용 날짜, 연차 효율 TOP 3까지 무료로 확인할 수 있으며, 리워드 광고를 본 뒤에는 2~5순위 조합과 월별 달력 시각화로 더 자세히 비교할 수 있습니다.",
+  "searchKeywords": [
+    "연차",
+    "연휴",
+    "휴일 계획",
+    "휴가",
+    "공휴일",
+    "대체공휴일",
+    "일정 계획",
+    "징검다리 연휴"
+  ],
+  "keyFeatures": [
+    "연차 입력으로 최장 연휴 자동 계산",
+    "연차 효율이 높은 조합 순위 비교",
+    "다음 연휴까지 D-day 카운트",
+    "공휴일과 대체공휴일 반영"
+  ],
+  "_notes": {
+    "appTypeSuspected": false,
+    "appTypeReasons": [],
+    "reviewLevel": null,
+    "reviewReasons": []
+  }
+}
