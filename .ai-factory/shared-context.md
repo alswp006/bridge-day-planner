@@ -115,7 +115,9 @@ export const SEARCH_END = "2027-12-31";
   hooks/
   lib/
     analytics.ts
+    calculator.ts
     contract.ts
+    date.ts
     review.ts
     share.ts
     storage.ts
@@ -134,7 +136,9 @@ export const SEARCH_END = "2027-12-31";
 
 ### Exports (src/lib/)
 - analytics.ts: export type LogFields = Record<string, string | number | boolean | null>; export const DWELL_MS = 3000; export function fireAndForget(call: () => unknown): void; export function logScreen(page: string, extra?: LogFields): void; export function logClick(name: string, extra?: LogFields): void; export function logImpression(name: string, extra?: LogFields): void; export function useScreenLog(page: string): void
+- calculator.ts: export function calculate( input: AppInput, holidays: Holiday[] | null | undefined, ): AppResult
 - contract.ts: export type STORAGE_KEY_LAST_LEAVE = "bridge-day:lastLeave"; export type LEAVE_MIN = 1; export type LEAVE_MAX = 25; export type SEARCH_END = "2027-12-31"; export type HOLIDAY_DATA_LAST_YEAR = 2027; export type formatRangeFn = (from: Date, to: Date) => string; export type toMDFn = (date: Date) => string
+- date.ts: export function toKey(d: Date): DateKey; export function parseKey(k: DateKey): Date; export function addDays(k: DateKey, n: number): DateKey; export function diffDays(a: DateKey, b: DateKey): number; export function weekdayKo(k: DateKey): string; export function isOffDay(k: DateKey, holidaySet: Set<DateKey>): boolean; export function formatRange(start: DateKey, end: DateKey): string; export function toMD(k: DateKey): string
 - review.ts: export function requestReviewOnce(key: string = REVIEW_REQUESTED_KEY): void
 - share.ts: export interface ShareAppOptions; export async function shareApp(opts: ShareAppOptions): Promise<void>
 - storage.ts: export function getItem<T>(key: string): T | null; export function setItem<T>(key: string, value: T): void; export function removeItem(key: string): void
@@ -156,10 +160,15 @@ export const SEARCH_END = "2027-12-31";
 - SummaryHero.tsx: SummaryHero
 - TossPurchase.tsx: TossPurchase
 - TossRewardAd.tsx: TossRewardAd
+
+### Module Dependencies (import graph)
+  lib/calculator.ts → imports: lib/types, lib/types, lib/date, lib/date
+  lib/date.ts → imports: lib/types
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
 ## Already Implemented (do NOT duplicate or overwrite)
 - 0001: Types & Constants + 공휴일 데이터 (files: src/lib/types.ts, src/data/holidays.ts)
+- 0002: Core Logic: 날짜 유틸 + 연휴 계산기 (files: src/lib/date.ts, src/lib/calculator.ts)
 
 ## Available exports from existing files
 // src/App.tsx
@@ -224,15 +233,17 @@ export function logClick(name: string, extra?: LogFields): void {
 export function logImpression(name: string, extra?: LogFields): void {
 export function useScreenLog(page: string): void {
 
+// src/lib/calculator.ts
+export {
+export function calculate(
+
 // src/lib/contract.ts
 export type STORAGE_KEY_LAST_LEAVE = "bridge-day:lastLeave";
 export type LEAVE_MIN = 1;
 export type LEAVE_MAX = 25;
 export type SEARCH_END = "2027-12-31";
 export type HOLIDAY_DATA_LAST_YEAR = 2027;
-export type formatRangeFn = (from: Date, to: Date) => string;
-export type toMDFn = (date: Date) => string;
-
+export type formatRangeFn = (from: Date, to: 
 
 ## Memory Index (자동 학습 — 힌트로만 사용, 실제 코드 확인 필수)
 
