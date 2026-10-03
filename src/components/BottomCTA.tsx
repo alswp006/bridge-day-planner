@@ -29,12 +29,15 @@ function fireHaptic(type: "success" | "tickWeak") {
  */
 export function SubmitFooter({
   label,
+  "aria-label": ariaLabel,
   onClick,
   disabled,
   loading,
   hint,
 }: {
   label: ReactNode;
+  /** 접근성 이름 — 없으면 문자열 label을 그대로 쓴다(로딩 중 라벨이 가려져도 이름이 남는다). */
+  "aria-label"?: string;
   onClick: () => void;
   disabled?: boolean;
   /** 제출 중 표시 — TDS ButtonProps.loading 패스스루. ui-design.md "제출 중 상태" 규칙의 실행 수단. */
@@ -48,6 +51,7 @@ export function SubmitFooter({
 }) {
   return (
     <FixedBottomCTA
+      aria-label={ariaLabel ?? textOf(label)}
       onClick={() => {
         fireHaptic("success");
         onClick();
@@ -60,6 +64,11 @@ export function SubmitFooter({
       {label}
     </FixedBottomCTA>
   );
+}
+
+/** 문자열 라벨이면 그대로 접근성 이름으로 — ReactNode 라벨은 호출부가 aria-label을 준다. */
+function textOf(label: ReactNode): string | undefined {
+  return typeof label === "string" ? label : undefined;
 }
 
 /** 빈 값(undefined·null·false·"")은 안내가 없는 것이다 — `hint={ok ? undefined : "…"}` 관용구를 그대로 받는다. */
@@ -90,8 +99,8 @@ export function ButtonStack({
   primary,
   secondary,
 }: {
-  primary: { label: ReactNode; onClick: () => void; disabled?: boolean };
-  secondary?: { label: ReactNode; onClick: () => void };
+  primary: { label: ReactNode; ariaLabel?: string; onClick: () => void; disabled?: boolean };
+  secondary?: { label: ReactNode; ariaLabel?: string; onClick: () => void };
 }) {
   return (
     <div
@@ -110,6 +119,7 @@ export function ButtonStack({
       <Button
         variant="fill"
         display="block"
+        aria-label={primary.ariaLabel ?? textOf(primary.label)}
         onClick={() => {
           fireHaptic("success");
           primary.onClick();
@@ -122,6 +132,7 @@ export function ButtonStack({
         <Button
           variant="weak"
           display="block"
+          aria-label={secondary.ariaLabel ?? textOf(secondary.label)}
           onClick={() => {
             fireHaptic("tickWeak");
             secondary.onClick();

@@ -39,6 +39,8 @@ vi.mock("@toss/tds-mobile", () => {
     Paragraph: Object.assign(({ children }: any) => h("div", null, children), { Text: text }),
     Spacing: () => h("div"),
     Spinner: () => h("div", { role: "progressbar", "data-testid": "spinner" }),
+    // 벤더(@toss/tds-mobile 2.5.1)에는 Spinner가 없다 — 인라인 로딩 인디케이터는 Loader다.
+    Loader: () => h("div", { role: "progressbar" }),
     Skeleton: () => h("div"),
     Asset: asset,
     Badge: text,

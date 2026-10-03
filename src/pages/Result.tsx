@@ -127,7 +127,7 @@ export default function Result() {
   const { nearest, efficiencyTop } = result;
 
   return (
-    <ScreenScaffold top={top} bottom={<SubmitFooter label="다시 계산하기" onClick={goHome} />}>
+    <ScreenScaffold top={top} bottom={<SubmitFooter aria-label="다시 계산하기" label="다시 계산하기" onClick={goHome} />}>
       <Spacing size={8} />
       <SummaryHero
         testId="top-combo-card"

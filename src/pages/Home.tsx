@@ -1,73 +1,186 @@
-import { Top, Paragraph, Spacing, ListRow, Button } from '@toss/tds-mobile';
-import { useNavigate } from 'react-router-dom';
-import { ScreenScaffold } from '../components/ScreenScaffold';
-import { SummaryHero } from '../components/SummaryHero';
-import { Card } from '../components/Card';
+import { useRef, useState, type FormEvent } from "react";
+import { Navigate } from "react-router-dom";
+import { Button, Loader, Paragraph, Spacing, TextField, Top } from "@toss/tds-mobile";
+import { SubmitFooter } from "@/components/BottomCTA";
+import { Card } from "@/components/Card";
+import { ScreenScaffold } from "@/components/ScreenScaffold";
+import { EmptyState } from "@/components/StateView";
+import { HOLIDAYS } from "@/data/holidays";
+import { logClick } from "@/lib/analytics";
+import { calculate } from "@/lib/calculator";
+import { toKey } from "@/lib/date";
+import { LEAVE_MAX, LEAVE_MIN, STORAGE_KEY_LAST_LEAVE } from "@/lib/types";
+import type { AppInput, RouteState } from "@/lib/types";
 
-/**
- * Golden Home page — 대시보드/탭-루트 골든 레퍼런스.
- *
- * 다른 페이지를 쓸 때 이 패턴을 모방하라:
- * - ScreenScaffold로 감싼다(raw fragment 골격 금지) — safe-area + 100dvh 자동 처리.
- * - 화면 최상단에 SummaryHero로 시각 앵커를 만든다('휑함'의 가장 큰 원인은 앵커 부재).
- *   데이터가 있으면 value에 <Amount value={n} unit="원" typography="t1" />로 핵심 숫자를 크게 박아라.
- * - 1차 진입 액션은 SummaryHero 카드 내부 버튼(display="block", 전체폭)에 둔다.
- *   → 화면 중앙 부유/좌측 글자폭 버튼 금지. 하단 TabBar가 있으면 SubmitFooter와 겹치므로 카드 안에.
- * - 핵심 정보는 raw <div>가 아니라 Card로 묶어 위계를 만든다.
- * - 하단 탭이 필요하면(2~5탭): bottom={<FloatingTabBar items={[{label,path}...]} />}.
- *   ('TDS TabBar'는 존재하지 않는다 — 직접 만들지 말고 FloatingTabBar를 써라.)
- * - 카피는 CLAUDE.md "카피 규칙 — AI 냄새 금지"를 따른다: 기능 나열식 홍보 문구·상투구·
- *   generic 버튼("시작하기") 금지. 이 파일의 예시 문구도 앱 맥락에 맞게 교체 대상이다.
- *
- * Scaffold tokens (replaced by scaffold-toss.ts at project creation):
- *   Bridge Day Planner -> the app's display name
- *   내 연차 2일로 최대 며칠 쉴 수 있을까? 올해·내년 연휴 연결 조합을 1~3위까지 뽑아줘요    -> the one-line description
- */
+const HINT_EMPTY = "남은 연차 일수를 입력해 주세요";
+const HELP_INVALID = `${LEAVE_MIN}~${LEAVE_MAX} 사이 정수로 입력해 주세요`;
 
-// ⚠ 이 목록은 골격 예시다 — 앱의 실제 콘텐츠(핵심 지표·최근 기록·바로가기)로 반드시 교체하라.
-// '간편한 사용/빠른 처리' 같은 기능 나열식 홍보 문구는 카피 규칙(CLAUDE.md "AI 냄새 금지") 위반이다.
-// 사용자가 이 화면에서 실제로 확인할 정보를 넣어라 — 아래처럼 데이터가 사는 행으로.
-const HIGHLIGHTS = [
-  { title: '오늘', description: '아직 기록이 없어요' },
-  { title: '이번 주', description: '기록 3건 · 평균 12분' },
-];
+/** 입력 문자열 → 유효한 연차 일수(1~25 정수), 아니면 null. 소수·문자·공백은 통과하지 못한다. */
+function parseLeave(raw: string): number | null {
+  const v = raw.trim();
+  if (!/^\d+$/.test(v)) return null;
+  const n = Number(v);
+  return n >= LEAVE_MIN && n <= LEAVE_MAX ? n : null;
+}
+
+/** @AI:NOTE 저장소 읽기 실패(SecurityError 등)는 "값 없음"과 같다 — AC-STORAGE-FAIL */
+function readLastLeave(): string {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_LAST_LEAVE);
+    return raw != null && parseLeave(raw) != null ? raw.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+/** @AI:NOTE 쓰기 실패(QuotaExceededError 등)는 삼키고 계산·이동은 그대로 진행한다 — AC-STORAGE-FAIL */
+function saveLastLeave(n: number) {
+  try {
+    localStorage.setItem(STORAGE_KEY_LAST_LEAVE, String(n));
+  } catch {
+    /* 저장 못 해도 결과는 보여 준다 */
+  }
+}
+
+type Status = "idle" | "loading" | "error";
 
 export default function Home() {
-  const navigate = useNavigate();
+  const [initial] = useState(readLastLeave);
+  const [value, setValue] = useState(initial);
+  const [touched, setTouched] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
+  const [done, setDone] = useState<RouteState | null>(null);
+  const busy = useRef(false);
+  const lastLeave = useRef<number | null>(null);
+
+  const leave = parseLeave(value);
+  const empty = value.trim() === "";
+  const invalid = !empty && leave == null;
+  const loading = status === "loading";
+
+  const run = (n: number) => {
+    if (busy.current) return;
+    busy.current = true;
+    lastLeave.current = n;
+    setStatus("loading");
+    saveLastLeave(n);
+    // Spinner가 최소 1프레임 그려진 뒤 계산한다 — AC-LOADING
+    setTimeout(() => {
+      try {
+        const input: AppInput = { leaveDays: n, today: toKey(new Date()) };
+        const result = calculate(input, HOLIDAYS);
+        setDone({ result, input });
+      } catch {
+        busy.current = false;
+        setStatus("error");
+      }
+    }, 0);
+  };
+
+  const submit = () => {
+    if (leave == null) return;
+    logClick("calculate_submit");
+    run(leave);
+  };
+
+  const retry = () => {
+    if (lastLeave.current == null) return;
+    logClick("calculate_retry");
+    run(lastLeave.current);
+  };
+
+  const onFormSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    submit();
+  };
+
+  // 계산이 끝나면 <Navigate>로 한 번만 이동한다(push — 뒤로가기로 Home에 돌아올 수 있다).
+  if (done) return <Navigate to="/result" state={done} />;
 
   return (
     <ScreenScaffold
       top={<Top title={<Top.TitleParagraph>징검다리 연휴</Top.TitleParagraph>} />}
+      bottom={
+        <SubmitFooter
+          aria-label="최장 연휴 찾기"
+          label="최장 연휴 찾기"
+          onClick={submit}
+          disabled={leave == null}
+          loading={loading}
+          hint={empty ? HINT_EMPTY : undefined}
+        />
+      }
     >
-      {/* 시각 앵커: 헤드라인 + 카드 내 진입 버튼(부유 금지, display="block" 전체폭).
-          데이터 앱이면 value를 <Amount typography="t1" />(핵심 숫자)로 교체하라. */}
-      <SummaryHero
-        label="징검다리 연휴"
-        value={<Paragraph.Text typography="t2">내 연차 2일로 최대 며칠 쉴 수 있을까? 올해·내년 연휴 연결 조합을 1~3위까지 뽑아줘요</Paragraph.Text>}
-        caption="로그인 없이 바로 쓸 수 있어요"
-        action={
-          // 라벨은 앱의 핵심 행동 동사로 교체하라 — "연봉 계산하기"/"기록 남기기" 등.
-          // generic "시작하기"/"확인"은 카피 규칙 위반. onClick도 실제 첫 화면 경로로.
-          <Button variant="fill" display="block" onClick={() => navigate('/')}>
-            첫 결과 보기
-          </Button>
-        }
-        testId="home-hero"
-      />
+      {initial === "" ? (
+        <EmptyState
+          testId="home-empty"
+          title="연차 며칠 남았나요?"
+          description="2027년 말까지 연휴를 가장 길게 잇는 날을 골라 드려요"
+        />
+      ) : (
+        <>
+          <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
+            지난번에 입력한 연차를 채워 뒀어요
+          </Paragraph.Text>
+          <Spacing size={16} />
+        </>
+      )}
 
-      <Spacing size={24} />
+      <form onSubmit={onFormSubmit} noValidate>
+        <TextField
+          variant="box"
+          aria-label="남은 연차 일수"
+          label="남은 연차 일수"
+          labelOption="sustain"
+          placeholder="예: 15"
+          suffix="일"
+          inputMode="numeric"
+          enterKeyHint="done"
+          autoComplete="off"
+          value={value}
+          disabled={loading}
+          hasError={touched && invalid}
+          help={invalid ? HELP_INVALID : undefined}
+          onChange={(e) => {
+            setTouched(true);
+            setValue(e.target.value);
+            if (status === "error") setStatus("idle");
+          }}
+          onFocus={(e) => {
+            try {
+              e.currentTarget.scrollIntoView({ block: "center" });
+            } catch {
+              /* 구형 WebView — 스크롤 없이 진행 */
+            }
+          }}
+        />
+      </form>
 
-      {/* 핵심 정보는 Card로 묶기(raw div 금지) — 위계 생성 */}
-      <Card testId="home-highlights">
-        {HIGHLIGHTS.map((h, idx) => (
-          <ListRow
-            key={idx}
-            contents={<ListRow.Texts type="2RowTypeA" top={h.title} bottom={h.description} />}
-          />
-        ))}
-      </Card>
+      {loading ? (
+        <>
+          <Spacing size={24} />
+          <div data-testid="spinner" style={{ display: "flex", justifyContent: "center" }}>
+            <Loader />
+          </div>
+        </>
+      ) : null}
 
-      <Spacing size={24} />
+      {status === "error" ? (
+        <>
+          <Spacing size={24} />
+          <Card testId="home-error">
+            <Paragraph.Text typography="t5">계산 중 문제가 생겼어요</Paragraph.Text>
+            <Spacing size={4} />
+            <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
+              입력한 연차로 한 번 더 계산해 볼게요
+            </Paragraph.Text>
+            <Spacing size={12} />
+            <Button variant="weak" display="block" aria-label="다시 시도" onClick={retry}>
+              다시 시도
+            </Button>
+          </Card>
+        </>
+      ) : null}
     </ScreenScaffold>
   );
 }
