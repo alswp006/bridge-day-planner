@@ -13,6 +13,32 @@ import { HOLIDAYS } from "@/data/holidays";
 import { ddayLabel, formatRange, toMD } from "@/lib/date";
 import type { Combo, Holiday, RouteState } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
+import { getItem, setItem } from "@/lib/storage";
+
+const PLANS_KEY = "bridge-day:plans";
+
+interface SavedPlan {
+  start: string;
+  end: string;
+  totalDays: number;
+  leaveCount: number;
+}
+
+function loadPlans(): SavedPlan[] {
+  const v = getItem<SavedPlan[]>(PLANS_KEY);
+  return Array.isArray(v) ? v : [];
+}
+
+/** 올해가 아닌 연휴는 연도를 붙여 지난 날짜로 오해하지 않게 한다. */
+function rangeWithYear(start: string, end: string): string {
+  const year = start.slice(0, 4);
+  const text = formatRange(start, end);
+  return year === String(new Date().getFullYear()) ? text : `${year}년 ${text}`;
+}
+
+function toPlan(c: Combo): SavedPlan {
+  return { start: c.start, end: c.end, totalDays: c.totalDays, leaveCount: c.leaveDates.length };
+}
 
 /** location.state를 RouteState로 좁힌다. 직접 진입·형태 깨짐이면 null. */
 function toRouteState(raw: unknown): RouteState | null {
@@ -33,7 +59,17 @@ function tickWeak() {
 }
 
 /** 광고 게이트 안쪽 — 2~5순위 비교와 월별 달력. 선택 상태가 여기 있어 칩을 눌러도 게이트는 다시 마운트되지 않는다. */
-function LockedLayer({ ranked, holidays }: { ranked: Combo[]; holidays: Holiday[] }) {
+function LockedLayer({
+  ranked,
+  holidays,
+  onSave,
+  isSaved,
+}: {
+  ranked: Combo[];
+  holidays: Holiday[];
+  onSave: (c: Combo) => void;
+  isSaved: (c: Combo) => boolean;
+}) {
   const [selected, setSelected] = useState(0);
 
   return (
@@ -70,6 +106,16 @@ function LockedLayer({ ranked, holidays }: { ranked: Combo[]; holidays: Holiday[
       </Chip>
       <Spacing size={16} />
       <MonthCalendar combos={ranked} selected={selected} holidays={holidays} />
+      <Spacing size={16} />
+      <Button
+        display="block"
+        variant="weak"
+        aria-label={`${selected + 1}위를 내 계획으로 저장`}
+        disabled={isSaved(ranked[selected])}
+        onClick={() => onSave(ranked[selected])}
+      >
+        {isSaved(ranked[selected]) ? `${selected + 1}위 계획에 저장됨` : `${selected + 1}위를 내 계획으로 저장`}
+      </Button>
     </>
   );
 }
@@ -77,12 +123,26 @@ function LockedLayer({ ranked, holidays }: { ranked: Combo[]; holidays: Holiday[
 export default function Result() {
   // 위치는 LocationContext에서 직접 읽고, 이동은 <Navigate>로 한다(basename은 Navigate가 처리).
   const [leaving, setLeaving] = useState(false);
+  const [plans, setPlans] = useState<SavedPlan[]>(loadPlans);
   const state = toRouteState(useContext(UNSAFE_LocationContext).location.state);
 
   const goHome = () => setLeaving(true);
   const goHomeWithHaptic = () => {
     tickWeak();
     goHome();
+  };
+
+  const isSaved = (c: Combo) => plans.some((p) => p.start === c.start && p.end === c.end);
+  const savePlan = (c: Combo) => {
+    if (isSaved(c)) return;
+    tickWeak();
+    const next = [...plans, toPlan(c)];
+    try {
+      setItem(PLANS_KEY, next);
+    } catch {
+      /* 저장 공간 오류 — 화면 상태만 갱신 */
+    }
+    setPlans(next);
   };
 
   if (leaving) return <Navigate to="/" />;
@@ -133,8 +193,11 @@ export default function Result() {
         testId="top-combo-card"
         label="1순위 최장 연휴"
         value={<Amount value={first.totalDays} unit="일" typography="t1" />}
-        caption={formatRange(first.start, first.end)}
+        caption={rangeWithYear(first.start, first.end)}
       />
+      <Button display="block" variant="weak" aria-label="1위를 내 계획으로 저장" disabled={isSaved(first)} onClick={() => savePlan(first)}>
+        {isSaved(first) ? "1위 계획에 저장됨" : "1위를 내 계획으로 저장"}
+      </Button>
       <ListRow
         contents={
           <ListRow.Texts
@@ -150,7 +213,7 @@ export default function Result() {
         }
       />
       <Spacing size={8} />
-      <Paragraph.Text typography="t7" color="var(--adaptiveGrey600)">
+      <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
         {`순위마다 연차 ${formatNumber(input.leaveDays)}일 안에서 따로 계산했어요`}
       </Paragraph.Text>
 
@@ -216,9 +279,30 @@ export default function Result() {
           </Paragraph.Text>
           <Spacing size={12} />
           <TossRewardAd slotId={import.meta.env.VITE_TOSS_AD_SLOT_ID}>
-            <LockedLayer ranked={result.ranked} holidays={HOLIDAYS} />
+            <LockedLayer ranked={result.ranked} holidays={HOLIDAYS} onSave={savePlan} isSaved={isSaved} />
           </TossRewardAd>
         </>
+      )}
+      <Spacing size={24} />
+      <Paragraph.Text typography="t4">저장된 계획</Paragraph.Text>
+      <Spacing size={12} />
+      {plans.length === 0 ? (
+        <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
+          저장한 연휴가 아직 없어요
+        </Paragraph.Text>
+      ) : (
+        plans.map((p) => (
+          <ListRow
+            key={`${p.start}-${p.end}`}
+            contents={
+              <ListRow.Texts
+                type="2RowTypeA"
+                top={rangeWithYear(p.start, p.end)}
+                bottom={`연속 ${formatNumber(p.totalDays)}일 · 연차 ${formatNumber(p.leaveCount)}일`}
+              />
+            }
+          />
+        ))
       )}
       <Spacing size={32} />
     </ScreenScaffold>
