@@ -50,7 +50,6 @@ export function TossRewardAd({
   const [unlocked, setUnlocked] = useState(false);
   const [isShowing, setIsShowing] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // setState 업데이터는 순수해야 한다(StrictMode가 두 번 부른다) — 로드 여부는 ref로 읽는다.
   const adLoadedRef = useRef(false);
@@ -82,7 +81,7 @@ export function TossRewardAd({
 
     try {
       loadFullScreenAd({
-        slotId,
+        options: { adGroupId: slotId },
         onEvent: () => {
           adLoadedRef.current = true;
           if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
@@ -94,7 +93,7 @@ export function TossRewardAd({
           setUnlocked(true);
           onRewarded?.();
         },
-      } as Parameters<typeof loadFullScreenAd>[0]);
+      });
     } catch {
       // SDK not available (e.g., jsdom) — auto-unlock
       if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
@@ -103,7 +102,6 @@ export function TossRewardAd({
     }
 
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,39 +114,28 @@ export function TossRewardAd({
   const handleWatch = () => {
     setIsShowing(true);
 
-    // Timeout fallback
-    timeoutRef.current = setTimeout(() => {
-      setUnlocked(true);
-      onRewarded?.();
-    }, timeoutMs);
-
     try {
       showFullScreenAd({
-        slotId,
-        onEvent: (event: { type?: string }) => {
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          // event.type === 'rewarded' indicates completion (SDK version-dependent)
-          // For safety, unlock on any event that finishes the ad
-          setUnlocked(true);
-          setIsShowing(false);
-          if (event?.type === "rewarded" || event?.type === "completed") {
+        options: { adGroupId: slotId },
+        onEvent: (event) => {
+          // 보상 이벤트(userEarnedReward)에서만 연다. 중간에 닫으면(dismissed) 게이트로 돌아간다.
+          if (event.type === "userEarnedReward") {
+            setUnlocked(true);
+            setIsShowing(false);
             onRewarded?.();
-          } else {
-            // dismissed or other — still unlock for UX (policy: gate only final payoff)
-            onRewarded?.();
+          } else if (event.type === "dismissed" || event.type === "failedToShow") {
+            setIsShowing(false);
           }
         },
         onError: () => {
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
           // Playback failed — unlock as fallback
           setUnlocked(true);
           setIsShowing(false);
           onRewarded?.();
         },
-      } as Parameters<typeof showFullScreenAd>[0]);
+      });
     } catch {
       // SDK call threw — unlock
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setUnlocked(true);
       setIsShowing(false);
       onRewarded?.();
