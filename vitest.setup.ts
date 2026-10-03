@@ -11,6 +11,13 @@
 import { beforeEach, afterEach, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
+// ── SDK 목 (전역) ──
+// 테스트 파일이 자기 vi.mock("@apps-in-toss/web-framework")을 걸면 그쪽이 이긴다.
+vi.mock("@apps-in-toss/web-framework", async () => {
+  const { createSdkMock } = await import("@/__tests__/__helpers__/sdk-mock");
+  return createSdkMock();
+});
+
 // ── localStorage / sessionStorage isolation ──
 // jsdom's storage persists between tests by default. Clear it to prevent pollution.
 beforeEach(() => {

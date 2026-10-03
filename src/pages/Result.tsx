@@ -1,14 +1,17 @@
 import { useContext, useState } from "react";
 import { Navigate, UNSAFE_LocationContext } from "react-router-dom";
-import { Badge, Button, ListRow, Paragraph, Spacing, Top } from "@toss/tds-mobile";
+import { Badge, Button, Chip, ChipItem, ListRow, Paragraph, Spacing, Top } from "@toss/tds-mobile";
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import { Amount } from "@/components/Amount";
 import { SubmitFooter } from "@/components/BottomCTA";
 import { ScreenScaffold } from "@/components/ScreenScaffold";
+import { MonthCalendar } from "@/components/MonthCalendar";
 import { EmptyState } from "@/components/StateView";
 import { SummaryHero } from "@/components/SummaryHero";
+import { TossRewardAd } from "@/components/TossRewardAd";
+import { HOLIDAYS } from "@/data/holidays";
 import { ddayLabel, formatRange, toMD } from "@/lib/date";
-import type { RouteState } from "@/lib/types";
+import type { Combo, Holiday, RouteState } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
 
 /** location.state를 RouteState로 좁힌다. 직접 진입·형태 깨짐이면 null. */
@@ -27,6 +30,48 @@ function tickWeak() {
   } catch {
     /* WebView 밖에서는 throw — 무시 */
   }
+}
+
+/** 광고 게이트 안쪽 — 2~5순위 비교와 월별 달력. 선택 상태가 여기 있어 칩을 눌러도 게이트는 다시 마운트되지 않는다. */
+function LockedLayer({ ranked, holidays }: { ranked: Combo[]; holidays: Holiday[] }) {
+  const [selected, setSelected] = useState(0);
+
+  return (
+    <>
+      {ranked.slice(1).map((c, i) => (
+        <ListRow
+          key={c.start}
+          left={<Paragraph.Text typography="t5">{`${i + 2}위`}</Paragraph.Text>}
+          contents={
+            <ListRow.Texts
+              type="2RowTypeA"
+              top={formatRange(c.start, c.end)}
+              bottom={`연속 ${formatNumber(c.totalDays)}일 · 연차 ${formatNumber(c.leaveDates.length)}일 · 1일당 ${formatNumber(c.efficiency)}일`}
+            />
+          }
+        />
+      ))}
+      <Spacing size={24} />
+      <Paragraph.Text typography="t4">월별 달력</Paragraph.Text>
+      <Spacing size={12} />
+      <Chip kind="select" size="small" wrap>
+        {ranked.map((c, i) => (
+          <ChipItem
+            key={c.start}
+            selected={selected === i}
+            onClick={() => {
+              tickWeak();
+              setSelected(i);
+            }}
+          >
+            {`${i + 1}위`}
+          </ChipItem>
+        ))}
+      </Chip>
+      <Spacing size={16} />
+      <MonthCalendar combos={ranked} selected={selected} holidays={holidays} />
+    </>
+  );
 }
 
 export default function Result() {
@@ -156,7 +201,25 @@ export default function Result() {
         </>
       ) : null}
 
-      {/* @LOCKED_LAYER — 0007에서 '다른 조합 비교' 섹션 추가 */}
+      {/* @LOCKED_LAYER */}
+      <Spacing size={24} />
+      <Paragraph.Text typography="t4">다른 조합 비교</Paragraph.Text>
+      <Spacing size={12} />
+      {result.ranked.length < 2 ? (
+        <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
+          다른 조합이 없어요
+        </Paragraph.Text>
+      ) : (
+        <>
+          <Paragraph.Text typography="t7" color="var(--adaptiveGrey600)">
+            광고를 보면 2~5순위 비교와 월별 달력을 볼 수 있어요
+          </Paragraph.Text>
+          <Spacing size={12} />
+          <TossRewardAd slotId={import.meta.env.VITE_TOSS_AD_SLOT_ID}>
+            <LockedLayer ranked={result.ranked} holidays={HOLIDAYS} />
+          </TossRewardAd>
+        </>
+      )}
       <Spacing size={32} />
     </ScreenScaffold>
   );
