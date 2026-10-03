@@ -279,12 +279,9 @@ describe("Core Logic: 날짜 유틸 + 연휴 계산기", () => {
         ];
         const result = calculate(input, holidays);
 
-        // All candidates must include at least 1 holiday
+        // All candidates must include at least 1 holiday name
         result.ranked.forEach((combo) => {
-          const hasHoliday = holidays.some((h) =>
-            combo.leaveDates.includes(h.date)
-          );
-          expect(hasHoliday).toBe(true);
+          expect(combo.holidayNames.length).toBeGreaterThan(0);
         });
       });
 

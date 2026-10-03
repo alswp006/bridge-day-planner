@@ -38,8 +38,57 @@ export type toMDFn = (date: Date) => string;
 
 ## Shared Types Contract (IMPORT these, do NOT redefine)
 ```typescript
-// Domain types — add your app-specific types here
-export {};
+// Domain types — SPEC Data Model
+
+/** 'YYYY-MM-DD' (로컬 날짜, 타임존 변환 금지) */
+export type DateKey = string;
+
+export interface Holiday {
+  date: DateKey;
+  name: string;
+  isSubstitute: boolean;
+}
+
+/** leaveDays는 LEAVE_MIN~LEAVE_MAX 정수 */
+export interface AppInput {
+  leaveDays: number;
+  today: DateKey;
+}
+
+export interface Combo {
+  start: DateKey;
+  end: DateKey;
+  /** 연속 휴일 일수 */
+  totalDays: number;
+  /** 연차 써야 하는 날 (length = 연차 사용일) */
+  leaveDates: DateKey[];
+  /** 구간에 들어 있는 공휴일 이름 */
+  holidayNames: string[];
+  /** totalDays / leaveDates.length, 소수 1자리 반올림 (정렬은 반올림 전 값) */
+  efficiency: number;
+  /** start - today (0 = D-DAY) */
+  dday: number;
+}
+
+export interface AppResult {
+  /** 길이순 최대 5개, 서로 겹치지 않음 */
+  ranked: Combo[];
+  /** 효율순 최대 3개, 서로 겹치지 않음 (풀 = 전체 후보) */
+  efficiencyTop: Combo[];
+  /** 전체 후보 중 시작일이 가장 빠른 조합 */
+  nearest: Combo | null;
+}
+
+/** react-router navigate state */
+export interface RouteState {
+  result: AppResult;
+  input: AppInput;
+}
+
+export const STORAGE_KEY_LAST_LEAVE = "bridge-day:lastLeave";
+export const LEAVE_MIN = 1;
+export const LEAVE_MAX = 25;
+export const SEARCH_END = "2027-12-31";
 
 ```
 
@@ -61,9 +110,12 @@ export {};
     SummaryHero.tsx
     TossPurchase.tsx
     TossRewardAd.tsx
+  data/
+    holidays.ts
   hooks/
   lib/
     analytics.ts
+    contract.ts
     review.ts
     share.ts
     storage.ts
@@ -82,9 +134,11 @@ export {};
 
 ### Exports (src/lib/)
 - analytics.ts: export type LogFields = Record<string, string | number | boolean | null>; export const DWELL_MS = 3000; export function fireAndForget(call: () => unknown): void; export function logScreen(page: string, extra?: LogFields): void; export function logClick(name: string, extra?: LogFields): void; export function logImpression(name: string, extra?: LogFields): void; export function useScreenLog(page: string): void
+- contract.ts: export type STORAGE_KEY_LAST_LEAVE = "bridge-day:lastLeave"; export type LEAVE_MIN = 1; export type LEAVE_MAX = 25; export type SEARCH_END = "2027-12-31"; export type HOLIDAY_DATA_LAST_YEAR = 2027; export type formatRangeFn = (from: Date, to: Date) => string; export type toMDFn = (date: Date) => string
 - review.ts: export function requestReviewOnce(key: string = REVIEW_REQUESTED_KEY): void
 - share.ts: export interface ShareAppOptions; export async function shareApp(opts: ShareAppOptions): Promise<void>
 - storage.ts: export function getItem<T>(key: string): T | null; export function setItem<T>(key: string, value: T): void; export function removeItem(key: string): void
+- types.ts: export type DateKey = string; export interface Holiday; export interface AppInput; export interface Combo; export interface AppResult; export interface RouteState; export const STORAGE_KEY_LAST_LEAVE = "bridge-day:lastLeave"; export const LEAVE_MIN = 1
 - utils.ts: export function cn(...classes: (string | boolean | undefined | null)[]): string; export function formatNumber(n: number): string; export function formatCurrency(n: number, currency = 'KRW'): string
 
 ### Components (src/components/)
@@ -103,6 +157,9 @@ export {};
 - TossPurchase.tsx: TossPurchase
 - TossRewardAd.tsx: TossRewardAd
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
+
+## Already Implemented (do NOT duplicate or overwrite)
+- 0001: Types & Constants + 공휴일 데이터 (files: src/lib/types.ts, src/data/holidays.ts)
 
 ## Available exports from existing files
 // src/App.tsx
@@ -154,6 +211,10 @@ export function TossPurchase({
 // src/components/TossRewardAd.tsx
 export function TossRewardAd({
 
+// src/data/holidays.ts
+export const HOLIDAY_DATA_LAST_YEAR = 2027;
+export const HOLIDAYS: Holiday[] = [
+
 // src/lib/analytics.ts
 export type LogFields = Record<string, string | number | boolean | null>;
 export const DWELL_MS = 3000;
@@ -172,10 +233,6 @@ export type HOLIDAY_DATA_LAST_YEAR = 2027;
 export type formatRangeFn = (from: Date, to: Date) => string;
 export type toMDFn = (date: Date) => string;
 
-// src/lib/review.ts
-export function requestReviewOnce(key: string = REVIEW_REQUESTED_KEY): void {
-
-// sr
 
 ## Memory Index (자동 학습 — 힌트로만 사용, 실제 코드 확인 필수)
 
