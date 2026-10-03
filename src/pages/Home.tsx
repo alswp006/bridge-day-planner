@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
+import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import { Button, Loader, Paragraph, Spacing, TextField, Top } from "@toss/tds-mobile";
 import { SubmitFooter } from "@/components/BottomCTA";
 import { Card } from "@/components/Card";
@@ -13,6 +14,7 @@ import { LEAVE_MAX, LEAVE_MIN, STORAGE_KEY_LAST_LEAVE } from "@/lib/types";
 import type { AppInput, RouteState } from "@/lib/types";
 
 const HINT_EMPTY = "남은 연차 일수를 입력해 주세요";
+const HINT_LOADING = "연휴를 찾고 있어요";
 const HELP_INVALID = `${LEAVE_MIN}~${LEAVE_MAX} 사이 정수로 입력해 주세요`;
 
 /** 입력 문자열 → 유효한 연차 일수(1~25 정수), 아니면 null. 소수·문자·공백은 통과하지 못한다. */
@@ -86,6 +88,11 @@ export default function Home() {
   const retry = () => {
     if (lastLeave.current == null) return;
     logClick("calculate_retry");
+    try {
+      Promise.resolve(generateHapticFeedback({ type: "success" })).catch(() => {});
+    } catch {
+      /* WebView 밖에서는 throw — 무시 */
+    }
     run(lastLeave.current);
   };
 
@@ -105,9 +112,8 @@ export default function Home() {
           aria-label="최장 연휴 찾기"
           label="최장 연휴 찾기"
           onClick={submit}
-          disabled={leave == null}
-          loading={loading}
-          hint={empty ? HINT_EMPTY : undefined}
+          disabled={leave == null || loading}
+          hint={loading ? HINT_LOADING : empty ? HINT_EMPTY : undefined}
         />
       }
     >
@@ -115,32 +121,25 @@ export default function Home() {
         <EmptyState
           testId="home-empty"
           title="연차 며칠 남았나요?"
-          description="2027년 말까지 연휴를 가장 길게 잇는 날을 골라 드려요"
+          description="남은 연차를 넣으면 2027년 말까지 가장 길게 쉬는 날을 찾아 드려요"
         />
-      ) : (
-        <>
-          <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
-            지난번에 입력한 연차를 채워 뒀어요
-          </Paragraph.Text>
-          <Spacing size={16} />
-        </>
-      )}
+      ) : null}
+      <Spacing size={16} />
 
       <form onSubmit={onFormSubmit} noValidate>
         <TextField
           variant="box"
-          aria-label="남은 연차 일수"
+          aria-label="남은 연차 일수(일)"
           label="남은 연차 일수"
           labelOption="sustain"
           placeholder="예: 15"
-          suffix="일"
           inputMode="numeric"
           enterKeyHint="done"
           autoComplete="off"
           value={value}
           disabled={loading}
           hasError={touched && invalid}
-          help={invalid ? HELP_INVALID : undefined}
+          help={touched && invalid ? HELP_INVALID : undefined}
           onChange={(e) => {
             setTouched(true);
             setValue(e.target.value);
@@ -155,6 +154,11 @@ export default function Home() {
           }}
         />
       </form>
+
+      <Spacing size={8} />
+      <Paragraph.Text typography="t7" color="var(--adaptiveGrey600)">
+        오늘부터 2027년 12월 31일까지 공휴일과 대체공휴일을 살펴봐요
+      </Paragraph.Text>
 
       {loading ? (
         <>

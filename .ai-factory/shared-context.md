@@ -167,7 +167,8 @@ export const SEARCH_END = "2027-12-31";
 ### Module Dependencies (import graph)
   lib/calculator.ts → imports: lib/types, lib/types, lib/date, lib/date
   lib/date.ts → imports: lib/types
-  pages/Result.tsx → imports: components/Amount, components/BottomCTA, components/ScreenScaffold, components/MonthCalendar, components/StateView, components/SummaryHero, components/TossRewardAd, data/holidays, lib/date, lib/types, lib/utils
+  pages/Home.tsx → imports: components/BottomCTA, components/Card, components/ScreenScaffold, components/StateView, data/holidays, lib/analytics, lib/calculator, lib/date, lib/types, lib/types
+  pages/Result.tsx → imports: components/Amount, components/BottomCTA, components/ScreenScaffold, components/MonthCalendar, components/StateView, components/SummaryHero, components/TossRewardAd, data/holidays, lib/date, lib/types, lib/utils, lib/storage
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
 ## Already Implemented (do NOT duplicate or overwrite)
@@ -177,8 +178,12 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0005: MonthCalendar 컴포넌트 (files: src/components/MonthCalendar.tsx)
 - 0006: Result Page: 무료 층 + 빈 상태 (files: src/pages/Result.tsx)
 - 0007: Result Page: 리워드 잠금 층 (2~5순위 + 달력) (files: src/pages/Result.tsx)
+- 0008: Routing & Integration + 검수 점검 (files: src/App.tsx)
 
 ## Available exports from existing files
+// src/App.tsx
+export default function App() {
+
 // src/components/AdSlot.tsx
 export function AdSlot({ adGroupId, className, variant, theme }: AdSlotProps) {
 
@@ -249,8 +254,7 @@ export function calculate(
 export type STORAGE_KEY_LAST_LEAVE = "bridge-day:lastLeave";
 export type LEAVE_MIN = 1;
 export type LEAVE_MAX = 25;
-export type SEARCH_END = "2027-12-31";
-export type HOL
+export
 
 ## Memory Index (자동 학습 — 힌트로만 사용, 실제 코드 확인 필수)
 
