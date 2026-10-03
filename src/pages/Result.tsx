@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { Navigate, UNSAFE_LocationContext } from "react-router-dom";
-import { Badge, Button, Chip, ChipItem, ListRow, Paragraph, Spacing, Top } from "@toss/tds-mobile";
+import { Asset, Badge, Button, Chip, ChipItem, ListRow, Paragraph, Spacing, Top } from "@toss/tds-mobile";
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import { Amount } from "@/components/Amount";
 import { SubmitFooter } from "@/components/BottomCTA";
@@ -151,16 +151,12 @@ export default function Result() {
 
   if (!state) {
     return (
-      <ScreenScaffold top={top}>
+      <ScreenScaffold top={top} bottom={<SubmitFooter aria-label="연차 입력하러 가기" label="연차 입력하러 가기" onClick={goHomeWithHaptic} />}>
         <EmptyState
           centered
+          icon={<Asset.ContentIcon name="iconStarRegular" alt="" style={{ width: 48, height: 48 }} />}
           title="아직 계산한 연휴가 없어요"
           description="남은 연차를 입력하면 연휴를 찾아 드려요"
-          action={
-            <Button variant="weak" display="block" aria-label="연차 입력하러 가기" onClick={goHomeWithHaptic}>
-              연차 입력하러 가기
-            </Button>
-          }
         />
       </ScreenScaffold>
     );
@@ -171,16 +167,12 @@ export default function Result() {
 
   if (!first) {
     return (
-      <ScreenScaffold top={top}>
+      <ScreenScaffold top={top} bottom={<SubmitFooter aria-label="다시 입력하기" label="다시 입력하기" onClick={goHomeWithHaptic} />}>
         <EmptyState
           centered
+          icon={<Asset.ContentIcon name="iconStarRegular" alt="" style={{ width: 48, height: 48 }} />}
           title="계산할 수 있는 연휴가 없어요"
           description="연차 일수를 바꿔서 다시 찾아볼 수 있어요"
-          action={
-            <Button variant="weak" display="block" aria-label="다시 입력하기" onClick={goHomeWithHaptic}>
-              다시 입력하기
-            </Button>
-          }
         />
       </ScreenScaffold>
     );

@@ -5,7 +5,6 @@ import { Button, Loader, Paragraph, Spacing, TextField, Top } from "@toss/tds-mo
 import { SubmitFooter } from "@/components/BottomCTA";
 import { Card } from "@/components/Card";
 import { ScreenScaffold } from "@/components/ScreenScaffold";
-import { EmptyState } from "@/components/StateView";
 import { HOLIDAYS } from "@/data/holidays";
 import { logClick } from "@/lib/analytics";
 import { calculate } from "@/lib/calculator";
@@ -118,13 +117,16 @@ export default function Home() {
       }
     >
       {initial === "" ? (
-        <EmptyState
-          testId="home-empty"
-          title="연차 며칠 남았나요?"
-          description="남은 연차를 넣으면 2027년 말까지 가장 길게 쉬는 날을 찾아 드려요"
-        />
+        <div data-testid="home-empty">
+          <Spacing size={8} />
+          <Paragraph.Text typography="t3">연차 며칠 남았나요?</Paragraph.Text>
+          <Spacing size={8} />
+          <Paragraph.Text typography="t6" color="var(--adaptiveGrey700)">
+            남은 연차를 넣으면 오늘부터 2027년 말까지 가장 길게 쉬는 날을 찾아 드려요
+          </Paragraph.Text>
+        </div>
       ) : null}
-      <Spacing size={16} />
+      <Spacing size={24} />
 
       <form onSubmit={onFormSubmit} noValidate>
         <TextField
@@ -155,10 +157,6 @@ export default function Home() {
         />
       </form>
 
-      <Spacing size={8} />
-      <Paragraph.Text typography="t7" color="var(--adaptiveGrey600)">
-        오늘부터 2027년 12월 31일까지 공휴일과 대체공휴일을 살펴봐요
-      </Paragraph.Text>
 
       {loading ? (
         <>
