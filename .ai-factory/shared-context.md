@@ -115,6 +115,7 @@ export const SEARCH_END = "2027-12-31";
   hooks/
   lib/
     analytics.ts
+    calculator.test.ts
     calculator.ts
     contract.ts
     date.ts
@@ -169,6 +170,7 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 ## Already Implemented (do NOT duplicate or overwrite)
 - 0001: Types & Constants + 공휴일 데이터 (files: src/lib/types.ts, src/data/holidays.ts)
 - 0002: Core Logic: 날짜 유틸 + 연휴 계산기 (files: src/lib/date.ts, src/lib/calculator.ts)
+- 0003: Core Logic 검증 (합성 fixture 테스트) (files: src/lib/calculator.test.ts)
 
 ## Available exports from existing files
 // src/App.tsx
