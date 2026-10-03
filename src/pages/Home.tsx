@@ -37,12 +37,12 @@ export default function Home() {
 
   return (
     <ScreenScaffold
-      top={<Top title={<Top.TitleParagraph>Bridge Day Planner</Top.TitleParagraph>} />}
+      top={<Top title={<Top.TitleParagraph>징검다리 연휴</Top.TitleParagraph>} />}
     >
       {/* 시각 앵커: 헤드라인 + 카드 내 진입 버튼(부유 금지, display="block" 전체폭).
           데이터 앱이면 value를 <Amount typography="t1" />(핵심 숫자)로 교체하라. */}
       <SummaryHero
-        label="Bridge Day Planner"
+        label="징검다리 연휴"
         value={<Paragraph.Text typography="t2">내 연차 2일로 최대 며칠 쉴 수 있을까? 올해·내년 연휴 연결 조합을 1~3위까지 뽑아줘요</Paragraph.Text>}
         caption="로그인 없이 바로 쓸 수 있어요"
         action={
