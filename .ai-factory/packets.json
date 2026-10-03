@@ -1,0 +1,366 @@
+[
+  {
+    "id": "0001",
+    "title": "Types & Constants + 공휴일 데이터",
+    "epic": "Epic 1: Types & Data",
+    "task": {
+      "description": "src/lib/types.ts에 SPEC Data Model(DateKey, Holiday, AppInput, Combo, AppResult, RouteState)을 그대로 export합니다. 상수 STORAGE_KEY_LAST_LEAVE='bridge-day:lastLeave', LEAVE_MIN=1, LEAVE_MAX=25, SEARCH_END='2027-12-31'도 함께 둡니다. src/data/holidays.ts에는 초안 표의 공휴일 24개 항목을 HOLIDAYS: Holiday[]로 넣고 HOLIDAY_DATA_LAST_YEAR=2027을 export합니다. 상단 주석에 출처와 검증 일자를 적고, 미결 사항 3건은 TODO 주석으로 남깁니다.",
+      "acceptance_criteria": [
+        "types.ts가 DateKey, Holiday, AppInput, Combo, AppResult, RouteState 6개 타입과 STORAGE_KEY_LAST_LEAVE, LEAVE_MIN, LEAVE_MAX, SEARCH_END 4개 상수를 export하고, `tsc --noEmit`이 0 error로 끝난다",
+        "HOLIDAYS 배열 길이가 24이고, 모든 항목에 date('YYYY-MM-DD'), name, isSubstitute 3개 필드가 있다. isSubstitute=true인 항목은 2026-10-05, 2027-02-08, 2027-08-16, 2027-10-04, 2027-10-11, 2027-12-27 이렇게 정확히 6개다",
+        "holidays.ts 상단 주석에 '한국천문연구원 특일정보', '관공서의 공휴일에 관한 규정', 검증 일자 항목이 있다. 'TODO' 주석 3개(제헌절, 노동절, 2027 임시공휴일)가 있다",
+        "holidays.ts에 'https://' 문자열이 0개다(Task 10의 grep 검사와 충돌하지 않도록)",
+        "HOLIDAY_DATA_LAST_YEAR === 2027이 export된다"
+      ]
+    },
+    "covers": [
+      "F1-AC-4",
+      "F1-AC-8"
+    ],
+    "files": [
+      "src/lib/types.ts",
+      "src/data/holidays.ts"
+    ],
+    "definition_of_done": [
+      "SPEC Data Model과 필드명·타입이 1:1로 일치한다",
+      "초안 표의 날짜가 모두 들어 있다. 설날 2027-02-05~07과 추석 2027-09-14~16은 하루마다 개별 항목으로 넣는다",
+      "미결 사항 3건(제헌절 7/17, 노동절 5/1, 2027 임시공휴일)은 데이터에서 빼고 TODO 주석으로만 남긴다",
+      "검증 일자는 실제로 확인한 뒤 적는다. 확인하지 못했으면 '[검증 필요]'로 두고, F1-AC-8은 미통과로 보고한다",
+      "tsc --noEmit이 통과한다"
+    ],
+    "depends_on": [],
+    "db_schema": "localStorage key: 'bridge-day:lastLeave' (string, 1~25 정수 문자열). 잠금 해제 상태는 저장하지 않는다.",
+    "api_contract": "N/A (서버 없음)",
+    "dependencies": [],
+    "ui_requirements": "UI 없음 (데이터·타입 전용 패킷)"
+  },
+  {
+    "id": "0002",
+    "title": "Core Logic: 날짜 유틸 + 연휴 계산기",
+    "epic": "Epic 2: Core Logic",
+    "task": {
+      "description": "src/lib/date.ts에 날짜 함수(toKey, parseKey, addDays, diffDays, weekdayKo, isOffDay, formatRange, toMD, ddayLabel)를 만듭니다. 모두 로컬 날짜 기준이며 UTC 변환을 쓰지 않습니다. src/lib/calculator.ts에는 순수 함수 calculate(input, holidays): AppResult를 만듭니다. 오늘~2027-12-31 사이에서 AC-1-5 조건을 만족하는 후보를 O(n²) 이하(누적합 사용)로 열거합니다. 그다음 ranked(최대 5개), efficiencyTop(최대 3개, 전체 후보 풀, 반올림 전 값으로 정렬), nearest를 반환합니다.",
+      "acceptance_criteria": [
+        "holidays가 undefined, null, []이면 예외 없이 { ranked: [], efficiencyTop: [], nearest: null }을 반환한다",
+        "input.today의 연도가 2027보다 크거나 후보가 0개이면 ranked.length === 0이다",
+        "모든 후보가 다음을 만족한다: 1 ≤ leaveDates.length ≤ leaveDays, 공휴일 1개 이상 포함, start ≥ today, start 전날과 end 다음 날은 근무일이거나 탐색 구간의 경계",
+        "ranked는 totalDays 내림차순 → leaveDates.length 오름차순 → start 오름차순으로 정렬되고, 서로 하루도 겹치지 않으며, 길이는 5 이하다",
+        "efficiencyTop은 전체 후보에서 반올림 전 totalDays/leaveDates.length 내림차순 → totalDays 내림차순 → start 오름차순으로 뽑고, TOP 3끼리는 겹치지 않는다. Combo.efficiency는 Math.round(x*10)/10 값이다",
+        "today가 휴무 구간의 중간이면 해당 후보의 start === today이고 dday === 0이며, ddayLabel(0) === 'D-DAY', ddayLabel(5) === 'D-5'다",
+        "formatRange('2026-10-09','2026-10-11') === '10월 9일(금) ~ 10월 11일(일)'이고 toMD('2026-10-05') === '10/5(월)'이다"
+      ]
+    },
+    "covers": [
+      "F1-AC-4",
+      "F1-AC-5",
+      "F1-AC-6",
+      "F1-AC-7",
+      "F1-AC-9",
+      "F2-AC-1",
+      "F2-AC-2",
+      "F2-AC-3",
+      "F2-AC-6",
+      "AC-CALC-DATA"
+    ],
+    "files": [
+      "src/lib/date.ts",
+      "src/lib/calculator.ts"
+    ],
+    "definition_of_done": [
+      "date.ts는 new Date(y, m-1, d)만 쓴다. toISOString, Date.UTC, getUTC* 사용은 0개다",
+      "calculator.ts는 React와 storage를 import하지 않는 순수 함수다(같은 입력에 같은 출력)",
+      "함수 첫 부분에서 holidays를 검사한다(null, undefined, 길이 0이면 빈 결과)",
+      "nearest는 전체 후보 중 start가 가장 빠른 조합이다. 동률이면 AC-1-6 순위 기준으로 첫 번째를 고른다",
+      "throw 문이 0개이고 console 호출이 0개다",
+      "tsc --noEmit이 통과한다"
+    ],
+    "depends_on": [
+      "0001"
+    ],
+    "db_schema": "N/A",
+    "api_contract": "export function calculate(input: AppInput, holidays: Holiday[] | null | undefined): AppResult\nexport function toKey(d: Date): DateKey; parseKey(k: DateKey): Date; addDays(k: DateKey, n: number): DateKey; diffDays(a: DateKey, b: DateKey): number /* a-b */; weekdayKo(k: DateKey): string; isOffDay(k: DateKey, holidaySet: Set<DateKey>): boolean; formatRange(start: DateKey, end: DateKey): string; toMD(k: DateKey): string; ddayLabel(n: number): string",
+    "dependencies": [],
+    "ui_requirements": "UI 없음 (순수 로직). 출력 문자열 형식: formatRange → 'M월 D일(요일) ~ M월 D일(요일)', toMD → 'M/D(요일)', ddayLabel → 'D-n' | 'D-DAY'"
+  },
+  {
+    "id": "0003",
+    "title": "Core Logic 검증 (합성 fixture 테스트)",
+    "epic": "Epic 2: Core Logic",
+    "task": {
+      "description": "실제 holidays.ts 대신 합성 공휴일 fixture로 calculate를 검증하는 테스트를 작성합니다. 케이스 ①~⑧(수요일 공휴일 + N=2, 공휴일 없는 구간 제외, 연차 0일 제외, 겹침 제외, 효율 반올림, 빈 holidays, 오늘=일요일 경계, 반올림 전 효율 정렬)을 모두 포함합니다. package.json에 vitest가 없으면 같은 케이스를 scripts/verify-calculator.ts로 작성합니다.",
+      "acceptance_criteria": [
+        "① 수요일 공휴일 1개 + leaveDays=2 → ranked[0].totalDays ≥ 5이고, 구간이 토요일에 시작해 일요일에 끝난다",
+        "② 공휴일이 없는 주말만으로 된 구간은 어떤 후보에도 없다. ③ leaveDates.length === 0인 후보가 없다",
+        "④ ranked의 모든 쌍이 날짜 구간상 겹치지 않는다. ⑤ 모든 Combo.efficiency가 소수 1자리 이하다",
+        "⑥ holidays가 [], undefined, null인 세 경우 모두 예외 없이 ranked.length === 0 && nearest === null이다",
+        "⑦ today가 일요일이고 전날(토)이 공휴일이면, 해당 구간 후보의 start === today이고 dday === 0이다",
+        "⑧ 반올림 전 효율이 2.34와 2.26인 후보가 있으면 efficiencyTop에서 2.34 후보의 index가 더 작다. ranked에 없는 후보도 efficiencyTop에 들어갈 수 있다",
+        "테스트 실행 명령(npx vitest run 또는 npx tsx scripts/verify-calculator.ts)의 종료 코드가 0이다"
+      ]
+    },
+    "covers": [
+      "F1-AC-5",
+      "F1-AC-6",
+      "F1-AC-9",
+      "F2-AC-2",
+      "F2-AC-6",
+      "AC-CALC-DATA"
+    ],
+    "files": [
+      "src/lib/calculator.test.ts"
+    ],
+    "definition_of_done": [
+      "fixture는 테스트 파일 안에서 직접 정의한다. src/data/holidays.ts는 import하지 않는다",
+      "케이스 ①~⑧이 각각 별도 test/assert 블록으로 있다",
+      "vitest가 없으면 파일 경로를 scripts/verify-calculator.ts로 바꾸고, 실패하면 process.exit(1)로 끝난다",
+      "테스트 코드에도 console.error는 0개다"
+    ],
+    "depends_on": [
+      "0002"
+    ],
+    "db_schema": "N/A",
+    "api_contract": "calculate(input: AppInput, holidays: Holiday[] | null | undefined): AppResult 를 검증 대상으로 사용",
+    "dependencies": [
+      "vitest (devDependency, 이미 있으면 그대로 사용)"
+    ],
+    "ui_requirements": "UI 없음 (테스트 전용)"
+  },
+  {
+    "id": "0004",
+    "title": "Home Page: 연차 입력 + 계산",
+    "epic": "Epic 3: Pages & Components",
+    "task": {
+      "description": "Home(/) 화면을 만듭니다. Top, EmptyState(저장값이 없거나 읽기에 실패한 경우), TextField(box, numeric, 1~25 정수만 유효), SubmitFooter '최장 연휴 찾기'로 구성합니다. 마운트할 때 localStorage 'bridge-day:lastLeave'를 try-catch로 읽어 TextField를 미리 채웁니다. 버튼을 탭하면 isCalculating 플래그로 중복 탭을 막고, 입력값을 저장(try-catch)한 뒤 setTimeout(0) 후 calculate를 실행하고 navigate('/result', { state })로 이동합니다. 예외가 나면 재시도 UI를 보여 줍니다.",
+      "acceptance_criteria": [
+        "입력이 비어 있으면 SubmitFooter가 disabled이고 hint가 '남은 연차 일수를 입력해 주세요'다. 첫 렌더에서는 TextField hasError가 false다",
+        "'0', '26', '2.5', 'abc'를 입력하면 help가 '1~25 사이 정수로 입력해 주세요'이고 버튼이 disabled다. '15'를 입력하면 버튼이 enabled다",
+        "저장값이 '15'이면 마운트할 때 TextField 값이 '15'다. 저장값이 없거나 '30', 'x'이거나 getItem이 throw하면 빈칸이고 EmptyState('연차 며칠 남았나요?')가 보인다",
+        "버튼을 탭하면 localStorage['bridge-day:lastLeave']에 입력값이 저장되고 URL이 /result가 된다. setItem이 throw해도 /result로 이동하고 console.error는 0건이다",
+        "계산 중에는 Spinner가 보이고, SubmitFooter와 TextField가 disabled다. 버튼을 빠르게 2번 탭해도 calculate는 1번만 호출되고 history는 1개만 늘어난다",
+        "calculate가 throw하면 '계산 중 문제가 생겼어요'와 '다시 시도' 버튼이 보이고, 버튼을 누르면 같은 입력으로 calculate를 다시 호출한다. console.error는 0건이다",
+        "TextField와 모든 Button에 aria-label이 있다. TextField에 포커스하면 scrollIntoView({ block: 'center' })가 호출된다"
+      ]
+    },
+    "covers": [
+      "F1-AC-1",
+      "F1-AC-2",
+      "F1-AC-3",
+      "AC-INPUT-1",
+      "AC-INPUT-2",
+      "AC-EMPTY",
+      "AC-LOADING",
+      "AC-ERROR",
+      "AC-KEYBOARD",
+      "AC-A11Y-1",
+      "AC-STORAGE-FAIL",
+      "AC-LOADING-2"
+    ],
+    "files": [
+      "src/pages/Home.tsx"
+    ],
+    "definition_of_done": [
+      "TDS(Top, TextField, Spacing, Paragraph, Button), 템플릿 EmptyState·SubmitFooter, 템플릿 storage 헬퍼만 사용한다(헬퍼가 예외를 이미 삼키면 그대로 두고, 아니면 try-catch로 감싼다)",
+      "catch 블록은 비어 있고 console 호출은 0개다",
+      "Spinner는 @toss/tds-mobile .d.ts에 export가 있을 때만 쓴다. 없으면 대체 컴포넌트를 만들지 말고 보고한다",
+      "TextField에 suffix와 Button loading prop을 쓰지 않는다. 대신 label '남은 연차 일수(일)'과 disabled를 쓴다",
+      "HEX/RGB는 0개다. 여백은 Spacing으로만 둔다. 인라인 margin/padding은 0개다",
+      "navigate state는 RouteState 타입({ result, input: { leaveDays, today } })이고, today는 toKey(new Date())다"
+    ],
+    "depends_on": [
+      "0001",
+      "0002"
+    ],
+    "db_schema": "localStorage 'bridge-day:lastLeave' 읽기/쓰기 (try-catch)",
+    "api_contract": "navigate('/result', { state: RouteState })",
+    "dependencies": [
+      "@toss/tds-mobile",
+      "react-router-dom",
+      "@apps-in-toss/web-framework"
+    ],
+    "ui_requirements": "## Screen: Home (/)\nPattern: InputForm (+ FixedBottomCTA)\nTDS Components (whitelist): Top, TextField, Spacing, Paragraph, Button, EmptyState(템플릿), SubmitFooter(템플릿), Spinner(⚠ export를 확인한 경우에만)\n\nLayout:\n<Top title={<Top.TitleParagraph>징검다리 연휴</Top.TitleParagraph>} />\n{!savedOnMount && (<EmptyState title=\"연차 며칠 남았나요?\" description=\"남은 연차를 넣으면 2027년 말까지 가장 길게 쉬는 날을 찾아 드려요\" />)}  // action 없음. 저장값이 없거나 읽기에 실패한 경우 (AC-EMPTY, AC-STORAGE-FAIL)\n<Spacing size={16} />\n<TextField variant=\"box\" label=\"남은 연차 일수(일)\" labelOption=\"sustain\" placeholder=\"예: 15\" inputMode=\"numeric\" aria-label=\"남은 연차 일수\" value={raw} onChange={onChange} disabled={isCalculating} hasError={touched && !!raw && !valid} help={touched && !!raw && !valid ? \"1~25 사이 정수로 입력해 주세요\" : undefined} onFocus={(e) => e.currentTarget.scrollIntoView({ block: 'center' })} />\n<Spacing size={8} />\n<Paragraph.Text typography=\"t7\" color=\"var(--adaptiveGrey600)\">오늘부터 2027년 12월 31일까지 공휴일과 대체공휴일을 살펴봐요</Paragraph.Text>\n{isCalculating && (<><Spacing size={24} /><Spinner /></>)}  // ⚠ export 확인\n{calcError && (<><Spacing size={24} /><Paragraph.Text typography=\"t6\">계산 중 문제가 생겼어요</Paragraph.Text><Spacing size={8} /><Button variant=\"weak\" size=\"medium\" aria-label=\"다시 시도\" onClick={retry}>다시 시도</Button></>)}\n<SubmitFooter label=\"최장 연휴 찾기\" aria-label=\"최장 연휴 찾기\" onClick={submit} disabled={!valid || isCalculating} hint={hintText} />\n// hintText: 빈 입력 \"남은 연차 일수를 입력해 주세요\" / 잘못된 값 \"1~25 사이 정수로 입력해 주세요\" / 계산 중 \"연휴를 찾고 있어요\"\n\nStates:\n- Loading: Spinner를 보여 준다. SubmitFooter와 TextField는 disabled. 계산은 setTimeout(0) 뒤에 실행한다.\n- Empty: 저장값이 없으면 EmptyState(action 없음). TextField는 빈칸이고 빨간 칸이 아니다.\n- Error: '계산 중 문제가 생겼어요'와 '다시 시도'(weak) 버튼. 같은 raw로 다시 계산한다. console 출력은 없다.\n\nInteractions:\n- 마운트: try { localStorage 읽기 } catch {} → 값이 /^\\d+$/이고 1~25이면 채우고, 아니면 빈칸으로 둔다.\n- onChange: 첫 변경 시 touched=true. 값은 문자열로 보관한다. 유효 조건은 /^\\d+$/ && 1≤n≤25.\n- 최장 연휴 찾기: ① if (isCalculating) return ② isCalculating=true ③ try { setItem('bridge-day:lastLeave') } catch {} ④ setTimeout(0) → calculate ⑤ navigate('/result', { state: { result, input } }). 햅틱은 SubmitFooter에 내장된 success를 쓰고 중복 호출하지 않는다.\n- 다시 시도: generateHapticFeedback({ type: 'success' }) 후 같은 입력으로 다시 계산한다.\n\n⚠ 사전 불일치 처리: Spinner는 export 확인이 필요하다. TextField suffix는 쓰지 않는다(label에 단위 포함). Button loading 대신 disabled를 쓴다. inputMode, aria-label, disabled, onFocus는 네이티브 속성 패스스루로 넘긴다. SubmitFooter가 aria-label을 Button까지 전달하는지 확인한다."
+  },
+  {
+    "id": "0005",
+    "title": "MonthCalendar 컴포넌트",
+    "epic": "Epic 3: Pages & Components",
+    "task": {
+      "description": "src/components/MonthCalendar.tsx를 만듭니다. props는 { combos: Combo[]; selected: number; holidays: Holiday[] }입니다. 1~5순위 구간이 걸친 월만 시간 순으로, 7열 CSS grid(헤더 일~토)로 그립니다. 칸은 ① 공휴일·주말(배경), ② 선택 순위의 연차 쓸 날(배경), ③ 선택 순위 구간(윤곽선)으로 구분합니다. 색은 var(--adaptive*) 토큰만 쓰고 범례 3개를 함께 표시합니다. 칸은 탭 대상이 아닙니다.",
+      "acceptance_criteria": [
+        "combos가 2026-10과 2027-02에 걸쳐 있으면 정확히 2개 월('2026년 10월', '2027년 2월')을 시간 순으로 렌더링하고, 걸치지 않은 월은 렌더링하지 않는다",
+        "각 월 그리드는 gridTemplateColumns 'repeat(7, 1fr)'이고, 헤더 7개가 '일','월','화','수','목','금','토' 순서이며, 1일 앞에 (요일 index)개의 빈 칸이 있다",
+        "토·일과 holidays 날짜 칸은 var(--adaptiveGrey100) 배경, combos[selected].leaveDates 칸은 var(--adaptiveBlue50) 배경, combos[selected] 구간(start~end) 칸은 var(--adaptiveBlue500) 2px outline이다",
+        "selected가 바뀌면 ②배경과 ③윤곽선이 새 순위 구간으로만 이동한다",
+        "범례 3개('공휴일·주말', '연차 쓸 날', '선택한 연휴')가 렌더링된다. 파일 안에 HEX/RGB 색상 리터럴과 onClick이 0개다"
+      ]
+    },
+    "covers": [
+      "F3-AC-2",
+      "AC-A11Y-3",
+      "AC-A11Y-2"
+    ],
+    "files": [
+      "src/components/MonthCalendar.tsx"
+    ],
+    "definition_of_done": [
+      "커스텀 CSS는 grid, flex, aspectRatio, borderRadius, 배경, 윤곽선 같은 레이아웃·스와치 용도만 쓴다. TDS 컴포넌트에 margin/padding 오버라이드는 0개다",
+      "텍스트는 Paragraph.Text, 간격은 Spacing을 쓴다",
+      "날짜 계산은 src/lib/date.ts 유틸(parseKey, addDays, weekdayKo 등)을 재사용한다. UTC 변환은 0개다",
+      "--adaptiveBlue50과 --adaptiveBlue500은 TDS CSS에 변수가 실제로 있는지 확인하고, 없으면 존재하는 var(--adaptive*) 토큰으로 바꾼 뒤 보고한다",
+      "tsc --noEmit이 통과한다"
+    ],
+    "depends_on": [
+      "0001",
+      "0002"
+    ],
+    "db_schema": "N/A",
+    "api_contract": "export function MonthCalendar(props: { combos: Combo[]; selected: number; holidays: Holiday[] }): JSX.Element",
+    "dependencies": [
+      "@toss/tds-mobile"
+    ],
+    "ui_requirements": "## Component: MonthCalendar (src/components/MonthCalendar.tsx)\nTDS Components (whitelist): Paragraph, Spacing. 그리드와 스와치용 div는 레이아웃 커스텀 CSS로만 허용한다.\n\nLayout:\n{months.map((m) => (<>   // 1~5순위 구간이 걸친 월만, 시간 순서대로\n  <Paragraph.Text typography=\"t5\">{m.year}년 {m.month}월</Paragraph.Text>\n  <Spacing size={8} />\n  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>\n    {['일','월','화','수','목','금','토'].map((w) => <Paragraph.Text typography=\"st13\" color=\"var(--adaptiveGrey600)\">{w}</Paragraph.Text>)}\n    {leadingBlanks}{days.map((d) => (\n      <div style={{ aspectRatio: '1', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cellBg(d), outline: inSelected(d) ? '2px solid var(--adaptiveBlue500)' : 'none' }}>\n        <Paragraph.Text typography=\"st12\">{d.day}</Paragraph.Text></div>))}\n  </div>\n  <Spacing size={16} />\n</>))}\n// 범례 3개: flex 행, 12×12 스와치 div + <Paragraph.Text typography=\"t7\"> 공휴일·주말 / 연차 쓸 날 / 선택한 연휴\n\n칸 색 규칙:\n| ① 공휴일·주말 | 배경 var(--adaptiveGrey100) |\n| ② 연차 쓸 날 | 배경 var(--adaptiveBlue50) ⚠ |\n| ③ 선택 순위 구간 | 윤곽선 var(--adaptiveBlue500) ⚠ (①·② 위에 겹쳐 표시) |\n- ②는 선택한 순위의 leaveDates만 칠한다(AC-3-3의 '해당 순위만 강조'에 맞춘 해석).\n- ⚠ 표시한 변수명은 TDS CSS에 실제로 있는지 확인한 뒤 쓴다.\n\n접근성: 칸은 탭 대상이 아니다(onClick 없음). 그래서 44px 터치 타겟 기준의 대상이 아니다. HEX/RGB는 0개다."
+  },
+  {
+    "id": "0006",
+    "title": "Result Page: 무료 층 + 빈 상태",
+    "epic": "Epic 3: Pages & Components",
+    "task": {
+      "description": "Result(/result)의 무료 층을 만듭니다. route state를 검사해 Empty A(state 없음 또는 형태 깨짐)와 Empty B(ranked.length === 0)로 분기합니다. 정상일 때는 1순위 SummaryHero, 연차 날짜 ListRow와 D-day Badge, 안내 문구, '다음 연결 연휴' ListRow, '효율 TOP 3' ListRow를 TossRewardAd 바깥에 렌더링합니다. 하단 SubmitFooter '다시 계산하기'는 /로 이동합니다. 잠금 층 자리는 0007에서 채울 수 있도록 주석 앵커로 비워 둡니다.",
+      "acceptance_criteria": [
+        "route state 없이 /result에 직접 들어가면 EmptyState '아직 계산한 연휴가 없어요'와 '연차 입력하러 가기' 버튼이 보이고, SubmitFooter는 렌더링되지 않는다. 버튼을 탭하면 /로 이동한다",
+        "ranked.length === 0이면 EmptyState '계산할 수 있는 연휴가 없어요'와 '다시 입력하기' 버튼이 보이고(AC-ERROR 화면이 아님), 버튼을 탭하면 /로 이동한다",
+        "정상일 때 1순위 기간이 'M월 D일(요일) ~ M월 D일(요일)', 연속 일수가 'N일', 연차 날짜가 'M/D(요일)' 쉼표 구분 목록으로 표시되고, D-day Badge는 'D-n' 또는 'D-DAY'다",
+        "1순위 카드 바로 아래에 '순위마다 연차 {leaveDays}일 안에서 따로 계산했어요' Paragraph.Text 1줄이 있다",
+        "'다음 연결 연휴' ListRow 1개(nearest 기간, D-day)와 '효율 TOP 3' ListRow(efficiencyTop.length개, '연차 1일당 X.X일')가 렌더링된다",
+        "이 패킷의 모든 요소는 TossRewardAd 바깥에 있다. 일수, 효율, D-day 숫자는 formatNumber를 거친다(템플릿 리터럴 안에서 raw number를 직접 쓰는 경우 0건)",
+        "'다시 계산하기' SubmitFooter를 탭하면 URL이 /가 된다"
+      ]
+    },
+    "covers": [
+      "F2-AC-1",
+      "F2-AC-3",
+      "F2-AC-4",
+      "F2-AC-5",
+      "F1-AC-7",
+      "AC-EMPTY",
+      "AC-FORMAT",
+      "AC-CALC-DATA"
+    ],
+    "files": [
+      "src/pages/Result.tsx"
+    ],
+    "definition_of_done": [
+      "useLocation().state를 RouteState로 좁히는 가드(result.ranked가 배열인지 확인)가 있다",
+      "formatRange, toMD, ddayLabel은 src/lib/date.ts에서 import한다. formatNumber는 템플릿 유틸에서 import한다",
+      "Empty 상태의 버튼은 generateHapticFeedback({ type: 'tickWeak' }) 후 navigate('/')를 호출한다",
+      "'다른 조합 비교' 섹션 위치에 {/* @LOCKED_LAYER */} 주석 앵커를 남긴다(0007이 채운다)",
+      "HEX/RGB는 0개다. 인라인 margin/padding은 0개다. 간격은 Spacing을 쓴다",
+      "SummaryHero나 Amount가 템플릿/TDS에 없으면 Paragraph.Text로 같은 정보를 표시하고 보고한다",
+      "tsc --noEmit이 통과한다"
+    ],
+    "depends_on": [
+      "0001",
+      "0002"
+    ],
+    "db_schema": "N/A (route state만 사용, localStorage 쓰기 없음)",
+    "api_contract": "입력: useLocation().state as RouteState | null",
+    "dependencies": [
+      "@toss/tds-mobile",
+      "react-router-dom",
+      "@apps-in-toss/web-framework"
+    ],
+    "ui_requirements": "## Screen: Result (/result) — 무료 층\nPattern: StatusPanel (Hero Summary + 섹션 + 리워드 게이트 + FixedBottomCTA)\nTDS Components (whitelist): Top, Spacing, Paragraph, ListRow, Badge, Button, Chip, ChipItem, SummaryHero, Amount, EmptyState, SubmitFooter, TossRewardAd(템플릿), MonthCalendar(로컬)\n\nLayout:\n<Top title={<Top.TitleParagraph>징검다리 연휴</Top.TitleParagraph>} />\n// 분기 순서: state 없음 → Empty A / ranked.length === 0 → Empty B / 그 외 ↓\n<Spacing size={8} />\n<SummaryHero label=\"1순위 최장 연휴\" value={<Amount value={top.totalDays} unit=\"일 연속\" typography=\"t1\" />} caption={formatRange(top.start, top.end)} />\n<ListRow contents={<ListRow.Texts type=\"2RowTypeA\" top={`연차 ${formatNumber(top.leaveDates.length)}일 사용`} bottom={top.leaveDates.map(toMD).join(', ')} />} right={<Badge size=\"small\" variant=\"fill\" color=\"blue\">{ddayLabel(top.dday)}</Badge>} />\n<Spacing size={8} />\n<Paragraph.Text typography=\"t7\" color=\"var(--adaptiveGrey600)\">순위마다 연차 {formatNumber(input.leaveDays)}일 안에서 따로 계산했어요</Paragraph.Text>\n<Spacing size={24} /><Paragraph.Text typography=\"t4\">다음 연결 연휴</Paragraph.Text><Spacing size={12} />\n<ListRow contents={<ListRow.Texts type=\"2RowTypeA\" top={formatRange(nearest)} bottom={`연속 N일 · 연차 N일`} />} right={<Badge size=\"small\" variant=\"weak\" color=\"teal\">{ddayLabel(nearest.dday)}</Badge>} />\n<Spacing size={24} /><Paragraph.Text typography=\"t4\">효율 TOP 3</Paragraph.Text><Spacing size={12} />\n{efficiencyTop.map((c) => <ListRow key={c.start} contents={<ListRow.Texts type=\"2RowTypeA\" top={`연차 1일당 ${formatNumber(c.efficiency)}일`} bottom={formatRange(c)} />} right={<Badge size=\"small\" variant=\"weak\" color=\"green\">{`${formatNumber(c.totalDays)}일`}</Badge>} />)}\n{/* @LOCKED_LAYER — 0007에서 '다른 조합 비교' 섹션 추가 */}\n<Spacing size={32} />\n<SubmitFooter label=\"다시 계산하기\" aria-label=\"다시 계산하기\" onClick={() => navigate('/')} />\n\nStates:\n- Loading: 없다(계산은 Home에서 끝남).\n- Empty A (route state가 없거나 형태가 깨진 경우): EmptyState title '아직 계산한 연휴가 없어요', description '남은 연차를 입력하면 연휴를 찾아 드려요', action <Button variant=\"weak\" aria-label=\"연차 입력하러 가기\">연차 입력하러 가기</Button>. SubmitFooter는 숨긴다.\n- Empty B (ranked.length === 0, AC-1-7·AC-CALC-DATA): EmptyState title '계산할 수 있는 연휴가 없어요', action Button weak '다시 입력하기'(aria-label 동일). SubmitFooter는 숨긴다.\n\nInteractions:\n- Empty 상태의 버튼: generateHapticFeedback({ type: 'tickWeak' }) → navigate('/').\n- 다시 계산하기: SubmitFooter에 내장된 success 햅틱. /로 이동했다가 /result에 다시 들어오면 새로 마운트되므로 잠금 층은 다시 잠긴다(AC-3-8)."
+  },
+  {
+    "id": "0007",
+    "title": "Result Page: 리워드 잠금 층 (2~5순위 + 달력)",
+    "epic": "Epic 3: Pages & Components",
+    "task": {
+      "description": "Result.tsx의 @LOCKED_LAYER 앵커에 '다른 조합 비교' 섹션을 추가합니다. ranked.length < 2이면 '다른 조합이 없어요'만 보여 줍니다. ranked.length ≥ 2이면 게이트 바깥에 잠금 안내 문구를 두고, <TossRewardAd slotId={import.meta.env.VITE_TOSS_AD_SLOT_ID}> 안에 LockedLayer(2~5순위 ListRow, Chip + ChipItem 1~N위, MonthCalendar)를 렌더링합니다. selected state는 LockedLayer 안에서 관리합니다. 무료 층 코드는 수정하지 않습니다.",
+      "acceptance_criteria": [
+        "ranked.length < 2이면 '다른 조합이 없어요'가 보이고, TossRewardAd와 잠금 안내 문구는 DOM에 0개다",
+        "ranked.length ≥ 2이면 TossRewardAd 바로 위(바깥)에 '광고를 보면 2~5순위 비교와 월별 달력을 볼 수 있어요' Paragraph.Text가 1개 있다",
+        "잠금이 풀리면 ListRow가 ranked.length - 1개(2위~) 보이고, 각 행에 순위('N위'), 기간, 연속 일수, 연차 사용일, 효율(formatNumber)이 있다",
+        "ChipItem은 ranked.length개만 있고, 기본 선택은 1위(index 0)다. ChipItem을 탭하면 tickWeak 햅틱 후 MonthCalendar selected가 해당 index로 바뀐다",
+        "Chip을 탭해도 TossRewardAd가 다시 마운트되지 않는다(selected state가 LockedLayer 안에 있음). 잠금 해제 상태와 관련된 localStorage 쓰기는 0건이다",
+        "TossRewardAd 안쪽에는 1순위 카드, 효율 TOP 3, D-day가 0개다(AC-REWARD). 광고를 불러오지 못하거나 사용자가 닫아도 무료 층 DOM은 바뀌지 않는다",
+        "slotId가 비어 있을 때를 위한 분기 코드는 0줄이다. 빈 슬롯 빌드에서는 템플릿 동작대로 바로 열린다(AC-3-5는 슬롯 ID를 넣고 다시 빌드한 빌드에서 검증한다)"
+      ]
+    },
+    "covers": [
+      "F3-AC-1",
+      "F3-AC-3",
+      "F3-AC-4",
+      "F3-AC-5",
+      "F3-AC-6",
+      "F3-AC-7",
+      "F3-AC-8",
+      "AC-REWARD"
+    ],
+    "files": [
+      "src/pages/Result.tsx"
+    ],
+    "definition_of_done": [
+      "TossRewardAd 템플릿 컴포넌트는 수정하지 않고 import만 한다",
+      "LockedLayer는 Result.tsx 안의 내부 컴포넌트이고 props는 { ranked: Combo[]; holidays: Holiday[] }다",
+      "0006의 무료 층 JSX와 빈 상태 분기는 diff 0줄이다(앵커 위치에만 추가)",
+      "HOLIDAYS는 src/data/holidays.ts에서, MonthCalendar는 src/components/MonthCalendar.tsx에서 import한다",
+      "HEX/RGB는 0개다. 인라인 margin/padding은 0개다",
+      "tsc --noEmit이 통과한다"
+    ],
+    "depends_on": [
+      "0005",
+      "0006"
+    ],
+    "db_schema": "N/A (잠금 해제 상태는 저장하지 않음)",
+    "api_contract": "<TossRewardAd slotId={import.meta.env.VITE_TOSS_AD_SLOT_ID}>{children}</TossRewardAd> (템플릿, 빌드 시점 주입 — 값이 바뀌면 다시 빌드)",
+    "dependencies": [
+      "@toss/tds-mobile",
+      "@apps-in-toss/web-framework"
+    ],
+    "ui_requirements": "## Screen: Result (/result) — 잠금 층 섹션 (@LOCKED_LAYER 위치)\n<Spacing size={24} /><Paragraph.Text typography=\"t4\">다른 조합 비교</Paragraph.Text><Spacing size={12} />\n{ranked.length < 2\n  ? <Paragraph.Text typography=\"t6\" color=\"var(--adaptiveGrey600)\">다른 조합이 없어요</Paragraph.Text>\n  : (<>\n      <Paragraph.Text typography=\"t7\" color=\"var(--adaptiveGrey600)\">광고를 보면 2~5순위 비교와 월별 달력을 볼 수 있어요</Paragraph.Text>\n      <Spacing size={12} />\n      <TossRewardAd slotId={import.meta.env.VITE_TOSS_AD_SLOT_ID}>\n        <LockedLayer ranked={ranked} holidays={HOLIDAYS} />\n      </TossRewardAd>\n    </>)}\n\nStates: 광고 대기 상태는 TossRewardAd 내부 동작에 맡긴다. 광고를 불러오지 못하거나 중간에 닫으면 잠금 층은 잠긴 채로 두고 무료 층은 바꾸지 않는다(AC-3-5).\nInteractions:\n- 잠금 해제 상태는 localStorage에 쓰지 않는다.\n- 슬롯 ID가 없을 때의 분기는 코드 0줄이다. 빈 슬롯 빌드에서는 게이트가 바로 열리는 것이 정상이다(AC-3-7).\n- 잠금 안내 문구: 게이트 바깥에서는 해제 상태를 알 수 없고 템플릿은 수정하지 않으므로, ranked.length >= 2 조건만으로 렌더링한다.\n\n## Component: LockedLayer (TossRewardAd 안쪽, Result.tsx 내부)\nTDS Components (whitelist): ListRow, Paragraph, Spacing, Chip, ChipItem, MonthCalendar(로컬)\n\nconst [selected, setSelected] = useState(0);   // 게이트 안쪽 state라서 Chip을 탭해도 게이트가 다시 마운트되지 않는다\n{ranked.slice(1).map((c, i) => <ListRow key={c.start} left={<Paragraph.Text typography=\"t5\">{i + 2}위</Paragraph.Text>} contents={<ListRow.Texts type=\"2RowTypeA\" top={formatRange(c)} bottom={`연속 ${formatNumber(c.totalDays)}일 · 연차 ${formatNumber(c.leaveDates.length)}일 · 1일당 ${formatNumber(c.efficiency)}일`} />} />)}\n<Spacing size={24} /><Paragraph.Text typography=\"t4\">월별 달력</Paragraph.Text><Spacing size={12} />\n<Chip kind=\"select\" size=\"small\" wrap>\n  {ranked.map((_, i) => <ChipItem key={i} selected={selected === i} onClick={() => { generateHapticFeedback({ type: 'tickWeak' }); setSelected(i); }}>{i + 1}위</ChipItem>)}\n</Chip>\n<Spacing size={16} />\n<MonthCalendar combos={ranked} selected={selected} holidays={HOLIDAYS} />\n- ChipItem은 실제로 있는 순위 수(2~5개)만큼만 렌더링한다. 기본 선택은 1위(index 0)다. ChipItem 크기는 TDS 기본값을 쓴다(AC-A11Y-2)."
+  },
+  {
+    "id": "0008",
+    "title": "Routing & Integration + 검수 점검",
+    "epic": "Epic 4: Integration & Routing",
+    "task": {
+      "description": "src/App.tsx에 react-router-dom 라우트 '/'→Home, '/result'→Result를 등록하고 앱 제목 '징검다리 연휴'를 확인합니다. main.tsx(@AI:ANCHOR)는 수정하지 않습니다. 전체 검수 점검으로 console.error, 외부 URL, 외부 로깅 SDK grep 결과 0건, 모든 Button과 TextField의 aria-label, 터치 타겟 44px, 빌드 성공을 확인합니다.",
+      "acceptance_criteria": [
+        "'/'에서 Home이, '/result'에서 Result가 렌더링되고, Home에서 계산하면 Result 화면에 결과가 표시된다",
+        "`grep -rn \"console.error\\|https://\\|gtag\\|amplitude\" src` 결과가 0건이다. 템플릿 파일에서 매치되면 수정하지 말고 보고한다",
+        "모든 화면의 Top 제목 텍스트가 '징검다리 연휴'다",
+        "src/pages와 src/components의 모든 Button, SubmitFooter, TextField에 aria-label이 있다(grep으로 확인)",
+        "외부 도메인 링크(<a href=\"http...\"> 또는 openURL)가 0개이고, GA나 Amplitude import가 0개다",
+        "`npm run build`의 종료 코드가 0이다. main.tsx는 git diff 0줄이다"
+      ]
+    },
+    "covers": [
+      "AC-A11Y-1",
+      "AC-A11Y-2",
+      "AC-REVIEW-1",
+      "AC-REVIEW-2",
+      "AC-REVIEW-3"
+    ],
+    "files": [
+      "src/App.tsx"
+    ],
+    "definition_of_done": [
+      "Routes에 path '/'와 '/result' 두 개가 등록되어 있다",
+      "FloatingTabBar와 AdSlot은 사용하지 않는다(MicroPlanning 결정: 배너 없음, 탭 구조 아님)",
+      "main.tsx와 템플릿 컴포넌트(AdSlot, TossRewardAd, TossPurchase, storage)는 수정하지 않는다",
+      "검수 grep 3종(console.error/https:///gtag|amplitude)의 결과가 0건이다",
+      "tsc --noEmit과 npm run build가 통과한다"
+    ],
+    "depends_on": [
+      "0004",
+      "0006",
+      "0007"
+    ],
+    "db_schema": "N/A",
+    "api_contract": "Routes: '/' → <Home />, '/result' → <Result />",
+    "dependencies": [
+      "react-router-dom"
+    ],
+    "ui_requirements": "공통: 모든 화면의 Top 제목은 SPEC '앱 이름:' 줄 그대로 '징검다리 연휴'다. 화면이 2개뿐이고 탭 구조가 아니므로 FloatingTabBar는 쓰지 않는다. 배너는 두지 않으므로 AdSlot도 쓰지 않는다(리워드 게이트 TossRewardAd만 사용). 규칙 기반 계산이므로 AI 고지 Pattern G/H는 적용하지 않는다. QA 참고: 오늘(2026-10-04, 일)은 전날 10/3이 개천절, 다음 날 10/5가 대체공휴일이라 실기기 테스트에서 바로 AC-1-9 상황(시작일=오늘, D-DAY)이 된다. 색은 var(--adaptive*) 토큰만 쓴다(HEX/RGB 0개). 하단 fixed 요소는 env(safe-area-inset-bottom)를 적용한다(SubmitFooter 템플릿 내장 여부를 확인)."
+  }
+]
