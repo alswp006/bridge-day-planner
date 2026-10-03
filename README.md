@@ -1,117 +1,41 @@
-🇺🇸 [한국어](./README.ko.md)
+# Bridge Day Planner
 
-# Bridge Day Planner — Find your longest vacation window
-
-Bridge Day Planner helps workers maximize their vacation time by automatically finding the longest consecutive holiday periods available from today through 2027. Input your remaining vacation days, and instantly discover the best times to take a long break by combining your days off with public holidays and weekends.
-
-Built as a Toss mini-app for iOS/Android, this tool eliminates the need for manual calendar calculations and provides data-driven insights on which vacation windows offer the best value.
-
-## Features
-
-- 📅 **Vacation combo calculation** — Input remaining days (1–25) and instantly find the longest consecutive rest period through end of 2027, accounting for public holidays, substitution holidays, weekends, and your vacation days
-- 🏆 **Ranked results** — View top 1 combo (free), with optional access to rankings 2–5 and monthly calendar views (behind a reward ad)
-- ⚡ **Efficiency ranking** — See top 3 vacation windows ranked by ROI (continuous days ÷ vacation days used)
-- ⏳ **D-day countdown** — Track days until your best vacation window and the next available combo
-- 📆 **Interactive calendar** — Visualize rest periods month-by-month with filtering by rank (unlocked via reward ad)
-- 💾 **Persistent input** — Last vacation input saved locally for quick recalculation
+앱 이름: 징검다리 연휴 / Bridge Day Planner > **이번 보완 내용**: 기존 내용은 그대로 두고 AC 8개를 추가했습니다(**[추가]** 표시). 추가한 AC는 Task의 Covers와 DoD에도 반영했습니다. 마지막의 "보완 근거"에 시뮬레이션 내용 중 반영한 것과 반영하지 않은 것을 정리했습니다. - **한줄 요약**: 남은 연차 일수를 넣으면 오늘부터 2027년 말까지의 공휴일(대체공휴일 포함)을 기준으로, 가장 길게 이어서 쉴 수 있는 날짜 조합을 찾아 줍니다.
 
 ## Tech Stack
 
-- **Framework**: React 18 + React Router v7 (Vite)
-- **Design**: TDS Mobile (Toss Design System) components
-- **Mobile**: App-in-Toss SDK + TDS Mobile AIT provider
-- **Styling**: Emotion (CSS-in-JS)
-- **Testing**: Vitest + Playwright (visual regression)
-- **Language**: TypeScript
+- React 18.0.0
+- TypeScript
+- Vitest
+
+## Routes
+
+| Path | Description |
+|------|-------------|
+| `/Home` | Home |
+| `/Result` | Result |
 
 ## Getting Started
 
-### Install dependencies
 ```bash
-npm install
+pnpm install
+pnpm dev
 ```
 
-### Build for production
+## Development
+
 ```bash
-npx vite build
+pnpm typecheck    # Type checking
+pnpm test         # Run tests
+pnpm build        # Production build
 ```
 
-Outputs a static bundle to `dist/`. No dynamic SSR — the app is client-side only.
+## Design Documents
 
-### Build & deploy to Toss Apps-in-Toss
-```bash
-npx ait build
-```
+See `.ai-factory/` directory for full design artifacts:
+- `prd.md` — Product Requirements Document
+- `spec.md` — Technical Specification
+- `task.md` — Epic/Task Breakdown
 
-Then submit for review via the [Toss developer console](https://developer.toss.im).
-
-### Local development (testing only)
-```bash
-npm run typecheck          # Type check
-npx vitest run             # Unit tests
-npm run test:visual        # Visual regression (Playwright)
-```
-
-Note: Dev server is not used for verification — build and visual tests are the gates.
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_TOSS_AD_SLOT_ID` | Reward ad slot ID from Toss console | No (feature disabled if empty) |
-| `VITE_SHARE_OG_URL` | OG image URL for app sharing | No |
-
-Copy `.env.example` to `.env` and fill in values from your Toss developer console.
-
-## Project Structure
-
-```
-src/
-├── pages/
-│   ├── Home.tsx              # Input form & calculation trigger
-│   ├── Result.tsx            # Results display, locked layer, calendar
-│   └── __TdsGallery.tsx       # Dev-only component gallery
-├── components/
-│   ├── ScreenScaffold.tsx     # Page shell with header/footer
-│   ├── BottomCTA.tsx          # Fixed bottom CTA buttons
-│   ├── Card.tsx               # Result card container
-│   ├── SummaryHero.tsx        # Large hero number display
-│   ├── MonthCalendar.tsx      # Month-by-month vacation calendar
-│   ├── TossRewardAd.tsx       # Reward ad gate wrapper
-│   └── StateView.tsx          # Empty & loading states
-├── lib/
-│   ├── calculator.ts          # Core algorithm (find best combos)
-│   ├── date.ts                # Date utilities & formatting
-│   ├── types.ts               # Shared type definitions
-│   ├── analytics.ts           # Event logging (wrapped SDK)
-│   ├── storage.ts             # localStorage helpers
-│   └── utils.ts               # Format functions
-├── data/
-│   └── holidays.ts            # Korean public holidays 2024–2027
-└── __tests__/
-    ├── *.test.ts              # Unit tests
-    └── __helpers__/           # Test utilities & mocks
-```
-
-## Deployment
-
-1. **Build locally**:
-   ```bash
-   npx vite build
-   ```
-
-2. **Run checks** (auto-gated before deployment):
-   - Type safety: `npx tsc --noEmit`
-   - Unit tests: `npx vitest run`
-   - Visual regression: `npm run test:visual`
-
-3. **Submit via Toss console**:
-   - Use `npx ait build` to create the app bundle
-   - Upload via [Toss developer console](https://console.tossmini.com)
-   - Pass review (19+ age gate, no external links, zero console errors)
-
-4. **Live on Toss** — after approval, accessible via the apps-in-toss ecosystem
-
-## License
-
-MIT
+---
+Built with [AI Factory](https://github.com/alswp006/ai-factory) · Last synced: 2026-10-03
