@@ -211,6 +211,27 @@ export default function Result() {
         {`순위마다 연차 ${formatNumber(input.leaveDays)}일 안에서 따로 계산했어요`}
       </Paragraph.Text>
 
+      <Spacing size={24} />
+      <Paragraph.Text typography="t4">저장된 계획</Paragraph.Text>
+      <Spacing size={12} />
+      {plans.length === 0 ? (
+        <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
+          저장한 연휴가 아직 없어요
+        </Paragraph.Text>
+      ) : (
+        plans.map((p) => (
+          <ListRow
+            key={`${p.start}-${p.end}`}
+            contents={
+              <ListRow.Texts
+                type="2RowTypeA"
+                top={rangeWithYear(p.start, p.end)}
+                bottom={`연속 ${formatNumber(p.totalDays)}일 · 연차 ${formatNumber(p.leaveCount)}일`}
+              />
+            }
+          />
+        ))
+      )}
       {nearest ? (
         <>
           <Spacing size={24} />
@@ -276,27 +297,6 @@ export default function Result() {
             <LockedLayer ranked={result.ranked} holidays={HOLIDAYS} onSave={savePlan} isSaved={isSaved} />
           </TossRewardAd>
         </>
-      )}
-      <Spacing size={24} />
-      <Paragraph.Text typography="t4">저장된 계획</Paragraph.Text>
-      <Spacing size={12} />
-      {plans.length === 0 ? (
-        <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
-          저장한 연휴가 아직 없어요
-        </Paragraph.Text>
-      ) : (
-        plans.map((p) => (
-          <ListRow
-            key={`${p.start}-${p.end}`}
-            contents={
-              <ListRow.Texts
-                type="2RowTypeA"
-                top={rangeWithYear(p.start, p.end)}
-                bottom={`연속 ${formatNumber(p.totalDays)}일 · 연차 ${formatNumber(p.leaveCount)}일`}
-              />
-            }
-          />
-        ))
       )}
       <Spacing size={32} />
     </ScreenScaffold>
