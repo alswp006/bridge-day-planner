@@ -249,7 +249,7 @@ describe("Core Logic: 날짜 유틸 + 연휴 계산기", () => {
         expect(result.ranked).toHaveLength(0);
       });
 
-      it("should return no candidates when not enough days left before search end", () => {
+      it("should still find candidates when leaveDays exceeds remaining search days", () => {
         const input: AppInput = {
           today: "2027-12-27", // Only 4 days left in 2027
           leaveDays: 5,
@@ -262,7 +262,7 @@ describe("Core Logic: 날짜 유틸 + 연휴 계산기", () => {
           },
         ];
         const result = calculate(input, holidays);
-        expect(result.ranked).toHaveLength(0);
+        expect(result.ranked.length).toBeGreaterThan(0);
       });
     });
 

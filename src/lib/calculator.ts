@@ -64,7 +64,7 @@ export function calculate(
 
   const { today, leaveDays } = input;
   const span = diffDays(SEARCH_END, today) + 1;
-  if (span <= leaveDays || !(leaveDays >= 1)) return emptyResult();
+  if (span < 1 || !(leaveDays >= 1)) return emptyResult();
 
   const holidayNameByDate = new Map<DateKey, string>();
   for (const h of holidays) {
