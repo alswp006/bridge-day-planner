@@ -103,6 +103,7 @@ export const SEARCH_END = "2027-12-31";
     CountUp.tsx
     FloatingTabBar.tsx
     MiniBar.tsx
+    MonthCalendar.tsx
     PageShell.tsx
     ScreenScaffold.tsx
     Sparkline.tsx
@@ -154,6 +155,7 @@ export const SEARCH_END = "2027-12-31";
 - CountUp.tsx: CountUp
 - FloatingTabBar.tsx: FloatingTabBar
 - MiniBar.tsx: MiniBar
+- MonthCalendar.tsx: MonthCalendar
 - PageShell.tsx: PageShell
 - ScreenScaffold.tsx: ScreenScaffold
 - Sparkline.tsx: Sparkline
@@ -171,6 +173,7 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0001: Types & Constants + 공휴일 데이터 (files: src/lib/types.ts, src/data/holidays.ts)
 - 0002: Core Logic: 날짜 유틸 + 연휴 계산기 (files: src/lib/date.ts, src/lib/calculator.ts)
 - 0003: Core Logic 검증 (합성 fixture 테스트) (files: src/lib/calculator.test.ts)
+- 0005: MonthCalendar 컴포넌트 (files: src/components/MonthCalendar.tsx)
 
 ## Available exports from existing files
 // src/App.tsx
@@ -198,6 +201,9 @@ export function FloatingTabBar({ items }: { items: TabItem[] }) {
 
 // src/components/MiniBar.tsx
 export function MiniBar({
+
+// src/components/MonthCalendar.tsx
+export function MonthCalendar({ combos, selected, holidays }: MonthCalendarProps) {
 
 // src/components/PageShell.tsx
 export function PageShell({
@@ -243,9 +249,7 @@ export function calculate(
 export type STORAGE_KEY_LAST_LEAVE = "bridge-day:lastLeave";
 export type LEAVE_MIN = 1;
 export type LEAVE_MAX = 25;
-export type SEARCH_END = "2027-12-31";
-export type HOLIDAY_DATA_LAST_YEAR = 2027;
-export type formatRangeFn = (from: Date, to: 
+export
 
 ## Memory Index (자동 학습 — 힌트로만 사용, 실제 코드 확인 필수)
 
