@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Navigate, UNSAFE_LocationContext } from "react-router-dom";
 import { Asset, Badge, Button, Chip, ChipItem, ListRow, Paragraph, Spacing, Top } from "@toss/tds-mobile";
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
@@ -10,7 +10,10 @@ import { EmptyState } from "@/components/StateView";
 import { SummaryHero } from "@/components/SummaryHero";
 import { TossRewardAd } from "@/components/TossRewardAd";
 import { HOLIDAYS } from "@/data/holidays";
+import { logClick } from "@/lib/analytics";
 import { ddayLabel, formatRange, toMD } from "@/lib/date";
+import { requestReviewOnce } from "@/lib/review";
+import { shareApp } from "@/lib/share";
 import type { Combo, Holiday, RouteState } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
 import { getItem, setItem } from "@/lib/storage";
@@ -145,6 +148,12 @@ export default function Result() {
     setPlans(next);
   };
 
+  // 1순위 결과가 실제로 화면에 나온 뒤에만 리뷰를 요청한다(빈 상태·빈 결과에서는 부르지 않는다).
+  const hasResult = (state?.result.ranked.length ?? 0) > 0;
+  useEffect(() => {
+    if (hasResult) requestReviewOnce();
+  }, [hasResult]);
+
   if (leaving) return <Navigate to="/" />;
 
   const top = <Top title={<Top.TitleParagraph>징검다리 연휴</Top.TitleParagraph>} />;
@@ -210,6 +219,21 @@ export default function Result() {
       <Paragraph.Text typography="t6" color="var(--adaptiveGrey600)">
         {`순위마다 연차 ${formatNumber(input.leaveDays)}일 안에서 따로 계산했어요`}
       </Paragraph.Text>
+      <Spacing size={12} />
+      <Button
+        display="block"
+        variant="weak"
+        aria-label="찾은 연휴 공유하기"
+        onClick={() => {
+          logClick("share_tap");
+          void shareApp({
+            message: `${rangeWithYear(first.start, first.end)}, 연차 ${formatNumber(first.leaveDates.length)}일로 ${formatNumber(first.totalDays)}일 쉴 수 있어요`,
+            path: "/",
+          });
+        }}
+      >
+        찾은 연휴 공유하기
+      </Button>
 
       <Spacing size={24} />
       <Paragraph.Text typography="t4">저장된 계획</Paragraph.Text>

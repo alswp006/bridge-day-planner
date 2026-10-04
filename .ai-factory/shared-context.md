@@ -167,7 +167,7 @@ export const SEARCH_END = "2027-12-31";
 ### Module Dependencies (import graph)
   lib/calculator.ts → imports: lib/types, lib/types, lib/date, lib/date
   lib/date.ts → imports: lib/types
-  pages/Home.tsx → imports: components/BottomCTA, components/Card, components/ScreenScaffold, components/StateView, data/holidays, lib/analytics, lib/calculator, lib/date, lib/types, lib/types
+  pages/Home.tsx → imports: components/BottomCTA, components/Card, components/ScreenScaffold, data/holidays, lib/analytics, lib/calculator, lib/date, lib/types, lib/types
   pages/Result.tsx → imports: components/Amount, components/BottomCTA, components/ScreenScaffold, components/MonthCalendar, components/StateView, components/SummaryHero, components/TossRewardAd, data/holidays, lib/date, lib/types, lib/utils, lib/storage
 CRITICAL: Before creating any new function, type, or component, check the list above. If something similar exists, import and use it.
 
@@ -175,6 +175,7 @@ CRITICAL: Before creating any new function, type, or component, check the list a
 - 0001: Types & Constants + 공휴일 데이터 (files: src/lib/types.ts, src/data/holidays.ts)
 - 0002: Core Logic: 날짜 유틸 + 연휴 계산기 (files: src/lib/date.ts, src/lib/calculator.ts)
 - 0003: Core Logic 검증 (합성 fixture 테스트) (files: src/lib/calculator.test.ts)
+- 0004: Home Page: 연차 입력 + 계산 (files: src/pages/Home.tsx)
 - 0005: MonthCalendar 컴포넌트 (files: src/components/MonthCalendar.tsx)
 - 0006: Result Page: 무료 층 + 빈 상태 (files: src/pages/Result.tsx)
 - 0007: Result Page: 리워드 잠금 층 (2~5순위 + 달력) (files: src/pages/Result.tsx)
