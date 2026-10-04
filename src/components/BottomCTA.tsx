@@ -60,6 +60,8 @@ export function SubmitFooter({
       loading={loading}
       // hint가 없으면 prop 자체를 넘기지 않는다 — 기존 호출부의 렌더 결과를 한 글자도 바꾸지 않는다.
       {...(hasHint(hint) ? { topAccessory: <SubmitFooterHint>{hint}</SubmitFooterHint> } : {})}
+      // safe-area 인셋이 0인 환경(브라우저·Android)에서 버튼이 화면 가장자리에 붙지 않게 하단 여백 확보
+      bottomAccessory={<div aria-hidden style={{ height: 12 }} />}
     >
       {label}
     </FixedBottomCTA>
@@ -83,7 +85,7 @@ function hasHint(hint: ReactNode): boolean {
  */
 function SubmitFooterHint({ children }: { children: ReactNode }) {
   return (
-    <div data-testid="submit-footer-hint" style={{ textAlign: "center", paddingBottom: 8 }}>
+    <div data-testid="submit-footer-hint" style={{ textAlign: "center", paddingBottom: 12 }}>
       <Paragraph.Text typography="t7" color="var(--adaptiveGrey800)">
         {children}
       </Paragraph.Text>
