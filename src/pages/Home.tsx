@@ -128,7 +128,7 @@ export default function Home() {
       ) : null}
       <Spacing size={24} />
 
-      <form onSubmit={onFormSubmit} noValidate>
+      <form onSubmit={onFormSubmit} noValidate style={{ margin: "0 -20px" }}>
         <TextField
           variant="box"
           aria-label="남은 연차 일수(일)"
