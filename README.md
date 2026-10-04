@@ -1,41 +1,107 @@
-# Bridge Day Planner
+🇺🇸 [한국어](./README.ko.md)
 
-앱 이름: 징검다리 연휴 / Bridge Day Planner > **이번 보완 내용**: 기존 내용은 그대로 두고 AC 8개를 추가했습니다(**[추가]** 표시). 추가한 AC는 Task의 Covers와 DoD에도 반영했습니다. 마지막의 "보완 근거"에 시뮬레이션 내용 중 반영한 것과 반영하지 않은 것을 정리했습니다. - **한줄 요약**: 남은 연차 일수를 넣으면 오늘부터 2027년 말까지의 공휴일(대체공휴일 포함)을 기준으로, 가장 길게 이어서 쉴 수 있는 날짜 조합을 찾아 줍니다.
+# Bridge Day Planner — Maximize your vacation with public holidays
+
+A mini-app that calculates the longest consecutive vacation period you can take by combining remaining paid leave with Korean public holidays. Enter your remaining vacation days and instantly discover the optimal combination of dates from today through the end of 2027.
+
+Designed for office workers aged 20–40 seeking to maximize their time off by strategically planning leave around public holidays (including substitute holidays).
+
+## Features
+
+- 📊 **Optimal vacation calculation** — Input remaining leave (1–25 days) to automatically find the longest possible consecutive break
+- 📋 **Free tier results** — View 1st-ranked combination with dates and required leave days, efficiency top 3 (days off per leave day used), and countdown to next opportunity
+- 📹 **Unlock with reward ad** — After watching a rewarded video, compare 2nd–5th ranked alternatives and view a month-by-month calendar
+- 📅 **Interactive calendar** — Select different ranking options (1st–5th) to highlight corresponding vacation periods; color-coded by holiday type
+- 💾 **Persistent input** — Last entered vacation days auto-saved to localStorage
+- 🔄 **Error recovery** — Loading state with spinner and graceful error handling
+- 📤 **Share results** — Built-in sharing to Toss messaging
+- ♿ **Accessibility** — ARIA labels, 44×44px touch targets, dark mode support
 
 ## Tech Stack
 
-- React 18.0.0
-- TypeScript
-- Vitest
-
-## Routes
-
-| Path | Description |
-|------|-------------|
-| `/Home` | Home |
-| `/Result` | Result |
+- **Frontend:** React 18 + Vite 6.3
+- **Routing:** React Router 7.5
+- **UI:** Toss Design System (TDS Mobile), Emotion CSS-in-JS, Lucide React
+- **Platform:** App-in-Toss SDK with rewarded ad support
+- **Testing:** Vitest + Playwright visual regression
+- **Language:** TypeScript 5.8
 
 ## Getting Started
 
+### Installation
 ```bash
-pnpm install
-pnpm dev
+npm install
 ```
 
-## Development
-
+### Verification
 ```bash
-pnpm typecheck    # Type checking
-pnpm test         # Run tests
-pnpm build        # Production build
+# Type checking
+npx tsc --noEmit
+
+# Run unit tests
+npx vitest run
+
+# Visual regression testing
+npm run test:visual
 ```
 
-## Design Documents
+### Production Build
+```bash
+# Standard Vite production bundle
+npm run build
 
-See `.ai-factory/` directory for full design artifacts:
-- `prd.md` — Product Requirements Document
-- `spec.md` — Technical Specification
-- `task.md` — Epic/Task Breakdown
+# Apps-in-Toss deployment bundle
+npx ait build
+```
 
----
-Built with [AI Factory](https://github.com/alswp006/ai-factory) · Last synced: 2026-10-03
+## Environment Variables
+
+| Variable | Description | Required |
+|---|---|---|
+| `VITE_SHARE_OG_URL` | Preview image URL for shared links | No |
+| `VITE_TOSS_AD_SLOT_ID` | Rewarded ad slot ID (from Toss console) | No |
+| `VITE_TOSS_IAP_SKU` | In-app purchase SKU (from Toss console) | No |
+| `VITE_TOSS_PROMOTION_CODE` | Promotion reward code (from Toss console) | No |
+
+See `.env.example` for template. Empty values gracefully degrade features without breaking the app.
+
+## Project Structure
+
+```
+src/
+  pages/               # Page components
+    Home.tsx          # Vacation input and navigation
+    Result.tsx        # Results display and calendar
+  lib/
+    calculator.ts     # Vacation combination algorithm
+    types.ts          # Shared TypeScript types
+    storage.ts        # localStorage helpers
+    analytics.ts      # Analytics wrapper
+    review.ts         # Review request wrapper
+    share.ts          # Sharing wrapper
+    date.ts           # Date utilities
+  data/
+    holidays.ts       # Korean public holidays 2024–2027
+  components/         # Pre-built component wrappers
+e2e/
+  visual-smoke.spec.ts # Visual regression tests
+```
+
+## Deployment
+
+### Build & Test
+1. `npm install`
+2. `npx tsc --noEmit`
+3. `npx vitest run`
+4. `npm run test:visual`
+5. `npm run build`
+
+### Apps-in-Toss Deployment
+1. `npx ait build` — Generate Toss-compatible bundle
+2. Submit to Toss developer console
+3. Verification checks: no console errors, CORS headers, dark mode support, safe area handling
+4. After approval, deploys to Toss CDN automatically
+
+## License
+
+MIT

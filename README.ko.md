@@ -1,116 +1,106 @@
 🇰🇷 [English](./README.md)
 
-# 징검다리 연휴 — 가장 긴 휴가 기간 찾기
+# 징검다리 연휴 — 공휴일과 연차를 조합한 최대 휴무 계산기
 
-징검다리 연휴는 근로자들이 남은 연차를 최대한 활용할 수 있도록 오늘부터 2027년까지의 가장 긴 연속 휴일 기간을 자동으로 찾아줍니다. 남은 연차 일수를 입력하면 공휴일, 대체휴일, 주말과 당신의 휴가를 조합하여 가장 긴 휴식 기간을 즉시 발견할 수 있습니다.
+남은 연차를 한국 공휴일과 결합하여 가장 긴 연속 휴무 기간을 계산하는 미니앱입니다. 남은 휴무일을 입력하면 오늘부터 2027년 말까지의 기간 중 최적의 날짜 조합을 즉시 추천합니다.
 
-토스의 미니앱으로 iOS/Android에서 사용 가능하며, 수동 달력 계산의 번거로움을 없애고 휴가 기간별 효율성에 대한 데이터 기반 인사이트를 제공합니다.
+공휴일(대체공휴일 포함)을 중심으로 연차를 전략적으로 계획하여 휴무를 극대화하려는 20대~40대 직장인을 위해 설계되었습니다.
 
 ## 기능
 
-- 📅 **연휴 조합 계산** — 남은 연차(1~25일)를 입력하면 공휴일, 대체휴일, 주말, 연차를 고려하여 2027년 말까지 가장 긴 연속 휴식 기간을 즉시 찾습니다
-- 🏆 **순위별 결과** — 최고 1위 조합 확인(무료), 2~5위 순위 및 월별 캘린더 보기 추가 해제 가능(리워드 광고 이용)
-- ⚡ **효율성 순위** — 효율성 순위 상위 3개 휴가 기간 확인(연속 휴무일 ÷ 사용 연차)
-- ⏳ **D-day 카운트다운** — 최고의 휴가 기간까지의 남은 일수와 다음 휴가 조합 추적
-- 📆 **인터랙티브 캘린더** — 월별 휴식 기간을 시각적으로 표현하고 순위별 필터링(리워드 광고 해제 필요)
-- 💾 **지속적인 입력 저장** — 마지막 연차 입력이 로컬에 저장되어 빠른 재계산 가능
+- 📊 **최적 연휴 계산** — 남은 연차(1~25일)를 입력하면 가능한 가장 긴 연속 휴무를 자동으로 찾음
+- 📋 **무료 기본 결과** — 1순위 조합의 날짜, 필요 연차일, 효율 상위 3개(연차 1일당 휴무일) 및 다음 기회 카운트다운 표시
+- 📹 **리워드 광고로 해금** — 보상형 영상 광고 시청 후 2순위~5순위 대안 비교 및 월별 캘린더 조회 가능
+- 📅 **인터랙티브 캘린더** — 순위 선택(1순위~5순위)으로 해당 휴무 기간 하이라이트; 공휴일 종류별 색상 구분
+- 💾 **지속적인 입력값 저장** — 마지막 입력 연차일을 localStorage에 자동 저장
+- 🔄 **에러 복구** — 스피너가 있는 로딩 상태 및 우아한 에러 처리
+- 📤 **결과 공유** — 토스 메시징으로 기본 공유 기능
+- ♿ **접근성** — ARIA 라벨, 44×44px 터치 타겟, 다크모드 지원
 
 ## 기술 스택
 
-- **프레임워크**: React 18 + React Router v7 (Vite)
-- **디자인**: TDS Mobile (Toss Design System) 컴포넌트
-- **모바일**: App-in-Toss SDK + TDS Mobile AIT 제공자
-- **스타일링**: Emotion (CSS-in-JS)
-- **테스트**: Vitest + Playwright (시각 회귀 테스트)
-- **언어**: TypeScript
+- **프론트엔드:** React 18 + Vite 6.3
+- **라우팅:** React Router 7.5
+- **UI:** Toss Design System (TDS Mobile), Emotion CSS-in-JS, Lucide React
+- **플랫폼:** App-in-Toss SDK 리워드 광고 지원
+- **테스트:** Vitest + Playwright 비주얼 회귀 테스트
+- **언어:** TypeScript 5.8
 
 ## 시작하기
 
-### 의존성 설치
+### 설치
 ```bash
 npm install
 ```
 
+### 검증
+```bash
+# 타입 체크
+npx tsc --noEmit
+
+# 유닛 테스트 실행
+npx vitest run
+
+# 비주얼 회귀 테스트
+npm run test:visual
+```
+
 ### 프로덕션 빌드
 ```bash
-npx vite build
-```
+# 표준 Vite 프로덕션 번들
+npm run build
 
-`dist/` 디렉토리에 정적 번들을 생성합니다. 동적 SSR은 지원하지 않으며 앱은 클라이언트 사이드 전용입니다.
-
-### 토스 앱인토스에 빌드 및 배포
-```bash
+# 앱인토스 배포 번들
 npx ait build
 ```
-
-그 후 [토스 개발자 콘솔](https://developer.toss.im)을 통해 검수 신청합니다.
-
-### 로컬 개발(테스트용)
-```bash
-npm run typecheck          # 타입 체크
-npx vitest run             # 단위 테스트
-npm run test:visual        # 시각 회귀 테스트 (Playwright)
-```
-
-참고: Dev 서버는 검증에 사용되지 않습니다 — 빌드 및 시각 테스트가 검증 게이트입니다.
 
 ## 환경 변수
 
 | 변수 | 설명 | 필수 |
-|------|------|------|
-| `VITE_TOSS_AD_SLOT_ID` | 토스 콘솔의 리워드 광고 슬롯 ID | 아니오(비어있으면 기능 비활성화) |
-| `VITE_SHARE_OG_URL` | 앱 공유용 OG 이미지 URL | 아니오 |
+|---|---|---|
+| `VITE_SHARE_OG_URL` | 공유 링크 미리보기 이미지 URL | 아니오 |
+| `VITE_TOSS_AD_SLOT_ID` | 리워드 광고 슬롯 ID (토스 콘솔에서 발급) | 아니오 |
+| `VITE_TOSS_IAP_SKU` | 인앱 결제 SKU (토스 콘솔에서 발급) | 아니오 |
+| `VITE_TOSS_PROMOTION_CODE` | 프로모션 보상 코드 (토스 콘솔에서 발급) | 아니오 |
 
-`.env.example`을 `.env`로 복사하고 토스 개발자 콘솔의 값을 입력합니다.
+`.env.example`에서 템플릿을 참고하세요. 빈 값은 앱을 깨지 않으면서 기능을 우아하게 축소합니다.
 
 ## 프로젝트 구조
 
 ```
 src/
-├── pages/
-│   ├── Home.tsx              # 입력 폼 & 계산 트리거
-│   ├── Result.tsx            # 결과 표시, 잠금 레이어, 캘린더
-│   └── __TdsGallery.tsx       # 개발용 컴포넌트 갤러리
-├── components/
-│   ├── ScreenScaffold.tsx     # 헤더/푸터가 있는 페이지 셸
-│   ├── BottomCTA.tsx          # 고정 하단 CTA 버튼
-│   ├── Card.tsx               # 결과 카드 컨테이너
-│   ├── SummaryHero.tsx        # 큰 히어로 숫자 표시
-│   ├── MonthCalendar.tsx      # 월별 연휴 캘린더
-│   ├── TossRewardAd.tsx       # 리워드 광고 게이트 래퍼
-│   └── StateView.tsx          # 빈 상태 및 로딩 상태
-├── lib/
-│   ├── calculator.ts          # 핵심 알고리즘(최고의 조합 찾기)
-│   ├── date.ts                # 날짜 유틸리티 & 포맷팅
-│   ├── types.ts               # 공유 타입 정의
-│   ├── analytics.ts           # 이벤트 로깅(래핑된 SDK)
-│   ├── storage.ts             # localStorage 헬퍼
-│   └── utils.ts               # 포맷 함수
-├── data/
-│   └── holidays.ts            # 한국 공휴일 2024~2027
-└── __tests__/
-    ├── *.test.ts              # 단위 테스트
-    └── __helpers__/           # 테스트 유틸리티 & 목
+  pages/               # 페이지 컴포넌트
+    Home.tsx          # 연휴 입력 및 네비게이션
+    Result.tsx        # 결과 표시 및 캘린더
+  lib/
+    calculator.ts     # 휴무 조합 알고리즘
+    types.ts          # 공유 TypeScript 타입
+    storage.ts        # localStorage 헬퍼
+    analytics.ts      # 분석 래퍼
+    review.ts         # 리뷰 요청 래퍼
+    share.ts          # 공유 래퍼
+    date.ts           # 날짜 유틸리티
+  data/
+    holidays.ts       # 한국 공휴일 2024~2027
+  components/         # 사전 구축된 컴포넌트 래퍼
+e2e/
+  visual-smoke.spec.ts # 비주얼 회귀 테스트
 ```
 
 ## 배포
 
-1. **로컬 빌드**:
-   ```bash
-   npx vite build
-   ```
+### 빌드 및 테스트
+1. `npm install`
+2. `npx tsc --noEmit`
+3. `npx vitest run`
+4. `npm run test:visual`
+5. `npm run build`
 
-2. **검사 실행**(배포 전 자동 게이트):
-   - 타입 안전성: `npx tsc --noEmit`
-   - 단위 테스트: `npx vitest run`
-   - 시각 회귀: `npm run test:visual`
-
-3. **토스 콘솔을 통해 신청**:
-   - `npx ait build`로 앱 번들 생성
-   - [토스 개발자 콘솔](https://console.tossmini.com)을 통해 업로드
-   - 검수 통과(19세 이상 연령 제한, 외부 링크 없음, 콘솔 오류 0개)
-
-4. **토스에서 라이브** — 승인 후 앱인토스 생태계를 통해 접근 가능
+### 앱인토스 배포
+1. `npx ait build` — 토스 호환 번들 생성
+2. 토스 개발자 콘솔에 제출
+3. 검증 확인: 콘솔 에러 없음, CORS 헤더, 다크모드 지원, Safe Area 처리
+4. 승인 후 자동으로 토스 CDN에 배포
 
 ## 라이선스
 
